@@ -1,0 +1,166 @@
+<!doctype html><html lang="pt-BR" data-t="light"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PIEGGI · Biblioteca UI</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Playfair+Display:ital,wght@1,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F4F3F0;--sf:#fff;--bd:#D8DBDF;--tx:#000;--t2:#646C78;--em:#0F6E5A;--e:cubic-bezier(.16,1,.3,1)}
+html[data-t=dark]{--bg:#0A0A0A;--sf:#141414;--bd:#ffffff1a;--tx:#FAFAF8;--t2:#9AA1AA}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--tx);font:14px/1.5 Inter,sans-serif;display:flex;min-height:100vh;transition:background .5s var(--e),color .5s var(--e)}
+aside{width:230px;background:#0A0A0A;color:#FAFAF8;padding:26px 18px;display:flex;flex-direction:column;gap:26px;flex:0 0 230px}
+.wm{font:20px Archivo Black,sans-serif;letter-spacing:-.045em}
+.sub{font-size:9px;letter-spacing:.22em;color:#7C848F;margin-top:6px}
+nav{display:flex;flex-direction:column;gap:2px}
+nav a{color:#9AA1AA;text-decoration:none;padding:10px 12px;border-radius:8px;transition:.35s var(--e)}
+nav a:hover{background:#ffffff12;color:#fff;transform:translateX(4px)}
+nav a.on{background:#fff;color:#000;font-weight:600}
+main{flex:1;padding:26px 34px 80px;overflow:auto}
+header{display:flex;gap:12px;align-items:center;border-bottom:1px solid var(--bd);padding-bottom:18px}
+.hl{margin:34px 0 18px}.hl b{display:block;font:400 13px Inter;letter-spacing:.2em;color:var(--t2)}
+.hl i{display:block;font:italic 500 54px/1 Playfair Display,serif;margin-top:-.06em}
+h3{font:600 11px Inter;letter-spacing:.18em;text-transform:uppercase;color:var(--t2);margin:34px 0 12px}
+.c{background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:22px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.btn{border:1px solid var(--bd);background:transparent;color:var(--tx);padding:10px 20px;border-radius:99px;cursor:pointer;font:600 12px Inter;transition:.4s var(--e)}
+.btn:hover{background:var(--tx);color:var(--bg);transform:translateY(-2px)}
+.btn.p{background:var(--tx);color:var(--bg)}.btn.p:hover{background:var(--em);border-color:var(--em);color:#fff}
+.btn.e{background:var(--em);color:#fff;border-color:var(--em)}.btn.e:hover{filter:brightness(1.25)}
+.btn.g{border:0;padding:10px 8px}.btn.g:hover{background:transparent;color:var(--em)}
+.btn:disabled{opacity:.35;cursor:not-allowed;transform:none;background:transparent;color:var(--tx)}
+.btn.sq{border-radius:8px}
+.sw{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px}
+.sw div{border:1px solid var(--bd);border-radius:8px;overflow:hidden;transition:.5s var(--e)}
+.sw div:hover{transform:translateY(-4px)}
+.sw i{display:block;height:64px}
+.sw p{font:10px JetBrains Mono,monospace;padding:7px 9px;color:var(--t2)}
+.p{display:inline-block;font:600 10px Inter;letter-spacing:.1em;padding:4px 11px;border-radius:99px;border:1px solid var(--bd)}
+.p.ok{background:var(--em);color:#fff;border-color:var(--em)}.p.w{background:#8A6A2F;color:#fff;border:0}
+.p.d{background:#7A2F2F;color:#fff;border:0}.p.k{background:var(--tx);color:var(--bg);border:0}
+.chip{border:1px solid var(--bd);border-radius:99px;padding:7px 15px;font-size:12px;cursor:pointer;transition:.35s var(--e)}
+.chip:hover{border-color:var(--tx)}.chip.on{background:var(--tx);color:var(--bg);border-color:var(--tx)}
+label{display:block;font:10px JetBrains Mono;letter-spacing:.14em;color:var(--t2);margin-bottom:6px}
+.f{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+input,select,textarea{width:100%;background:transparent;border:1px solid var(--bd);border-radius:8px;padding:11px 14px;color:var(--tx);font:13px Inter;transition:.4s var(--e)}
+input:focus,select:focus,textarea:focus{outline:0;border-color:var(--tx);box-shadow:0 0 0 4px #0000000d}
+.al{border-left:3px solid var(--tx);background:var(--sf);border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:10px;font-size:13px}
+.al.s{border-color:var(--em)}.al.w{border-color:#8A6A2F}.al.d{border-color:#7A2F2F}
+.pr{height:5px;background:var(--bd);border-radius:99px;overflow:hidden}
+.pr i{display:block;height:100%;background:var(--tx);width:0;transition:width 1.4s var(--e)}
+.sk{height:13px;border-radius:99px;background:linear-gradient(90deg,var(--bd),var(--bg),var(--bd));background-size:200% 100%;animation:sh 1.4s infinite;margin-bottom:9px}
+@keyframes sh{to{background-position:-200% 0}}
+table{width:100%;border-collapse:collapse;background:var(--sf);border:1px solid var(--bd);border-radius:8px;overflow:hidden}
+th{text-align:left;font:10px JetBrains Mono;letter-spacing:.14em;color:var(--t2);padding:12px 16px;border-bottom:1px solid var(--bd)}
+td{padding:13px 16px;border-bottom:1px solid var(--bd);font-size:13px}
+tbody tr{transition:.3s var(--e)}tbody tr:hover{background:var(--bg)}
+.ov{position:fixed;inset:0;background:#000c;display:none;align-items:center;justify-content:center;opacity:0;transition:.4s var(--e)}
+.ov.on{display:flex;opacity:1}
+.md{background:var(--sf);border-radius:12px;padding:30px;width:min(440px,90vw);transform:translateY(24px) scale(.97);transition:.6s var(--e)}
+.ov.on .md{transform:none}
+.ts{position:fixed;right:26px;bottom:26px;background:var(--tx);color:var(--bg);padding:14px 22px;border-radius:99px;font-size:13px;opacity:0;transform:translateY(16px);transition:.5s var(--e);pointer-events:none}
+.ts.on{opacity:1;transform:none}
+.rv{opacity:0;transform:translateY(24px);transition:.9s var(--e)}.rv.in{opacity:1;transform:none}
+@media(max-width:900px){body{display:block}aside{width:100%}}
+</style></head><body>
+<aside>
+  <div><div class="wm">PIEGGI®</div><div class="sub">CATERING · EVENTOS & CAFETERIA</div></div>
+  <nav><a href="pieggi-dashboard.html">Dashboard</a><a href="#">Eventos</a><a href="#">Cardápios</a>
+  <a href="#">Clientes</a><a href="#" class="on">Biblioteca UI</a><a href="#">Configurações</a></nav>
+  <div style="margin-top:auto;font:10px JetBrains Mono;color:#4E555F">v1.0 · design system</div>
+</aside>
+<main>
+  <header><strong style="flex:1;font:600 13px Inter;letter-spacing:.1em">BIBLIOTECA DE COMPONENTES</strong>
+  <button class="btn" id="tg">Tema</button><button class="btn p" onclick="toast('Tokens exportados')">Exportar tokens</button></header>
+  <div class="hl"><b>DESIGN SYSTEM</b><i>Componentes</i></div>
+
+  <h3>Cores</h3>
+  <div class="sw rv">
+    <div><i style="background:#000"></i><p>#000000 ink</p></div>
+    <div><i style="background:#141414"></i><p>#141414 sf-dark</p></div>
+    <div><i style="background:#4E555F"></i><p>#4E555F slate</p></div>
+    <div><i style="background:#646C78"></i><p>#646C78 t2</p></div>
+    <div><i style="background:#9AA1AA"></i><p>#9AA1AA t3</p></div>
+    <div><i style="background:#D8DBDF"></i><p>#D8DBDF border</p></div>
+    <div><i style="background:#F4F3F0"></i><p>#F4F3F0 bone</p></div>
+    <div><i style="background:#0F6E5A"></i><p>#0F6E5A emerald</p></div>
+    <div><i style="background:#8A6A2F"></i><p>#8A6A2F warning</p></div>
+    <div><i style="background:#7A2F2F"></i><p>#7A2F2F danger</p></div>
+  </div>
+
+  <h3>Tipografia</h3>
+  <div class="c rv">
+    <div style="font:36px Archivo Black,sans-serif;letter-spacing:-.045em">PIEGGI®</div>
+    <p style="font:10px JetBrains Mono;color:var(--t2)">Archivo Black · display · tracking −.045em</p>
+    <div style="font:italic 500 44px Playfair Display,serif;margin-top:18px">Experiência única</div>
+    <p style="font:10px JetBrains Mono;color:var(--t2)">Playfair Display Italic · editorial</p>
+    <p style="margin-top:18px;max-width:560px">Inter Regular 14/1.5 — corpo de interface, tabelas, formulários e microcópia do sistema.</p>
+    <p style="font:13px JetBrains Mono;margin-top:10px">R$ 486.320,00 · 7.240 pax · +18,4%</p>
+  </div>
+
+  <h3>Botões</h3>
+  <div class="c row rv">
+    <button class="btn p">Primário</button><button class="btn">Secundário</button>
+    <button class="btn e">Confirmar</button><button class="btn sq">Quadrado</button>
+    <button class="btn g">Ghost</button><button class="btn" disabled>Desabilitado</button>
+    <button class="btn p" onclick="mo(1)">Abrir modal</button>
+    <button class="btn" onclick="toast('Evento salvo com sucesso')">Toast</button>
+  </div>
+
+  <h3>Badges & Chips</h3>
+  <div class="c rv">
+    <div class="row"><span class="p k">MASTER</span><span class="p ok">CONFIRMADO</span>
+    <span class="p w">PROPOSTA</span><span class="p d">CANCELADO</span><span class="p">RASCUNHO</span></div>
+    <div class="row" style="margin-top:16px" id="chips">
+      <span class="chip on">Todos</span><span class="chip">Coffee Break</span><span class="chip">Brunch</span>
+      <span class="chip">Almoços</span><span class="chip">Jantares</span><span class="chip">Coquetéis</span>
+    </div>
+  </div>
+
+  <h3>Formulário</h3>
+  <div class="c rv"><div class="f">
+    <div><label>CLIENTE</label><input placeholder="Ex.: Oracle"></div>
+    <div><label>SERVIÇO</label><select><option>Coffee Break</option><option>Brunch</option><option>Jantar</option><option>Coquetel</option></select></div>
+    <div><label>DATA</label><input type="date"></div>
+    <div><label>PAX</label><input type="number" value="120"></div>
+  </div>
+  <div style="margin-top:16px"><label>OBSERVAÇÕES</label><textarea rows="3" placeholder="Restrições alimentares, montagem, horário…"></textarea></div>
+  <div class="row" style="margin-top:18px"><button class="btn p" onclick="toast('Proposta enviada')">Enviar proposta</button><button class="btn g">Cancelar</button></div></div>
+
+  <h3>Feedback</h3>
+  <div class="rv">
+    <div class="al s"><b>Confirmado.</b> Cardápio aprovado pelo cliente Bayer.</div>
+    <div class="al w"><b>Atenção.</b> 3 eventos aguardam confirmação há mais de 48h.</div>
+    <div class="al d"><b>Erro.</b> Não foi possível sincronizar a agenda de produção.</div>
+    <div class="al"><b>Nota.</b> Cardápios exclusivos para vegetarianos e celíacos disponíveis.</div>
+  </div>
+
+  <h3>Progresso & Skeleton</h3>
+  <div class="c rv">
+    <label>PRODUÇÃO DO DIA · 68%</label><div class="pr"><i id="pb"></i></div>
+    <div style="margin-top:22px"><div class="sk" style="width:45%"></div><div class="sk" style="width:85%"></div><div class="sk" style="width:65%"></div></div>
+  </div>
+
+  <h3>Tabela</h3>
+  <table class="rv"><thead><tr><th>CLIENTE</th><th>SERVIÇO</th><th>PAX</th><th>STATUS</th></tr></thead><tbody>
+    <tr><td>Oracle</td><td>Coffee Break</td><td>180</td><td><span class="p ok">CONFIRMADO</span></td></tr>
+    <tr><td>Inteli</td><td>Jantar</td><td>240</td><td><span class="p w">PROPOSTA</span></td></tr>
+    <tr><td>Neon</td><td>Brunch</td><td>60</td><td><span class="p">RASCUNHO</span></td></tr>
+  </tbody></table>
+</main>
+<div class="ov" id="ov" onclick="if(event.target==this)mo(0)"><div class="md">
+  <div style="font:italic 500 30px Playfair Display,serif">Confirmar evento</div>
+  <p style="color:var(--t2);margin:12px 0 22px">O cliente será notificado e o cardápio entrará em produção.</p>
+  <div class="row"><button class="btn p" onclick="mo(0);toast('Evento confirmado')">Confirmar</button><button class="btn g" onclick="mo(0)">Voltar</button></div>
+</div></div>
+<div class="ts" id="ts"></div>
+<script>
+document.getElementById('tg').onclick=function(){var h=document.documentElement;h.dataset.t=h.dataset.t=='dark'?'light':'dark'};
+function mo(s){document.getElementById('ov').classList.toggle('on',!!s)}
+var tt;function toast(m){var t=document.getElementById('ts');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(function(){t.classList.remove('on')},2600)}
+document.getElementById('chips').onclick=function(e){if(!e.target.classList.contains('chip'))return;
+  [].forEach.call(this.children,function(c){c.classList.remove('on')});e.target.classList.add('on')};
+var o=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');
+  if(e.target.querySelector('#pb'))document.getElementById('pb').style.width='68%'}})},{threshold:.1});
+document.querySelectorAll('.rv').forEach(function(el){o.observe(el)});
+document.addEventListener('keydown',function(e){if(e.key=='Escape')mo(0)});
+</script>
+</body></html>

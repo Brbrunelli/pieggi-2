@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-t="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PIEGGI · Sistema</title>
+
+    <!-- Tipografia da marca: grotesco display, Didone itálica, UI e mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Playfair+Display:ital,wght@1,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- tema salvo, aplicado antes de pintar a tela (evita o "flash" branco) -->
+    <script>
+      try {
+        var t = localStorage.getItem('pg-tema')
+        if (t) document.documentElement.dataset.t = t
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

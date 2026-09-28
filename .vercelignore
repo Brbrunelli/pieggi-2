@@ -1,0 +1,29 @@
+# ------------------------------------------------------------
+# O que NÃO sobe para o Vercel.
+#
+# Sem este arquivo o CLI tentaria enviar ~1 GB de material de referência
+# (238 propostas .pptx, cardápios em PDF) que não entra no build. O
+# upload demoraria muito e provavelmente falharia.
+# ------------------------------------------------------------
+node_modules
+dist
+
+# material de referência da casa — fica só no seu computador
+modulo-propostas
+modulo-programação
+modulo-comandas
+modulo-plaquinha
+modulo-compras
+front-base
+*.pptx
+*.docx
+*.pdf
+*.xlsx
+
+# SQL e funções são aplicados no Supabase, não no front
+supabase
+
+# rascunhos
+teste.html
+PLANO-DE-ACAO.md
+.claude

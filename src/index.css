@@ -1,0 +1,161 @@
+@import "tailwindcss";
+
+/* ============================================================
+   PIEGGI — Design System 1.0
+   "Silêncio visual + gesto preciso."
+
+   Lei 1 — A cor vem do prato: a interface é preto, bone e slate.
+   Lei 2 — Tipografia é arquitetura: grotesco pesado × Didone itálica.
+   Lei 3 — Movimento é serviço: expo.out, nunca ricochete.
+
+   A paleta neutra do Tailwind foi REDEFINIDA para a rampa Pieggi.
+   Assim toda tela que já usa `neutral-*` adota a marca sem ser tocada.
+   ============================================================ */
+
+@theme {
+  /* ---- tipografia ---- */
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-display: "Archivo Black", "Inter", system-ui, sans-serif;
+  --font-editorial: "Playfair Display", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* ---- Ink / Bone / Slate (substitui a rampa neutra) ---- */
+  --color-neutral-50: #fafaf8;
+  --color-neutral-100: #f4f3f0;
+  --color-neutral-200: #d8dbdf;
+  --color-neutral-300: #bfc4cb;
+  --color-neutral-400: #9aa1aa;
+  --color-neutral-500: #7c848f;
+  --color-neutral-600: #646c78;
+  --color-neutral-700: #4e555f;
+  --color-neutral-800: #1f1f1f;
+  --color-neutral-900: #0a0a0a;
+  --color-neutral-950: #000000;
+
+  /* ---- acento único: verde profundo, com parcimônia ---- */
+  --color-green-50: #e8f2ef;
+  --color-green-100: #cfe5df;
+  --color-green-600: #0f6e5a;
+  --color-green-700: #0f6e5a;
+  --color-green-800: #0b5545;
+
+  /* ---- semânticos dessaturados de propósito ---- */
+  --color-amber-50: #f6f1e6;
+  --color-amber-100: #ece2cd;
+  --color-amber-700: #8a6a2f;
+  --color-amber-800: #6f5526;
+
+  --color-red-50: #f5eaea;
+  --color-red-100: #e8d2d2;
+  --color-red-300: #c99a9a;
+  --color-red-600: #7a2f2f;
+  --color-red-700: #7a2f2f;
+  --color-red-800: #5f2424;
+
+  /* sem azul de sistema — o "blue" da marca é slate */
+  --color-blue-50: #eef0f2;
+  --color-blue-100: #dde1e5;
+  --color-blue-600: #4e555f;
+  --color-blue-700: #4e555f;
+
+  /* ---- movimento ---- */
+  --ease-pieggi: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ============================================================
+   Superfícies — claro e escuro
+   ============================================================ */
+:root {
+  --pg-bg: #f4f3f0;
+  --pg-surface: #ffffff;
+  --pg-border: #d8dbdf;
+  --pg-text: #000000;
+  --pg-muted: #646c78;
+}
+
+html[data-t="dark"] {
+  --pg-bg: #0a0a0a;
+  --pg-surface: #141414;
+  --pg-border: rgb(255 255 255 / 0.1);
+  --pg-text: #fafaf8;
+  --pg-muted: #9aa1aa;
+}
+
+body {
+  background: var(--pg-bg);
+  color: var(--pg-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  transition:
+    background 0.5s var(--ease-pieggi),
+    color 0.5s var(--ease-pieggi);
+}
+
+/* ============================================================
+   Par tipográfico da marca — rótulo leve + palavra display itálica
+   "PAINEL / Operacional"
+   ============================================================ */
+.pg-headline b {
+  display: block;
+  font-weight: 400;
+  font-size: 0.8125rem;
+  letter-spacing: 0.2em;
+  color: var(--pg-muted);
+  text-transform: uppercase;
+}
+.pg-headline i {
+  display: block;
+  font-family: var(--font-editorial);
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(2rem, 4.5vw, 3.375rem);
+  line-height: 1;
+  margin-top: -0.06em;
+  letter-spacing: -0.015em;
+}
+
+/* wordmark — grotesco quase colidindo */
+.pg-wordmark {
+  font-family: var(--font-display);
+  letter-spacing: -0.045em;
+  text-transform: uppercase;
+}
+
+/* micro-rótulo mono, usado em KPI e cabeçalho de tabela */
+.pg-key {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--pg-muted);
+}
+
+/* número grande de indicador */
+.pg-metric {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.04em;
+}
+
+/* entrada suave ao rolar — antecipação leve, entrega macia */
+@keyframes pg-rise {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.pg-rise {
+  animation: pg-rise 0.7s var(--ease-pieggi) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pg-rise,
+  body {
+    animation: none;
+    transition: none;
+  }
+}

@@ -1,0 +1,26 @@
+node_modules
+dist
+.env
+.env.local
+*.local
+.DS_Store
+
+# ------------------------------------------------------------
+# Material de referência da casa — pesado e não entra no build.
+#
+# `modulo-propostas` sozinho tem ~940 MB (238 propostas .pptx reais) e a
+# raiz mais 44 MB de exemplos. São a fonte de verdade do FORMATO das
+# propostas e precisam continuar no computador, mas versionar binário
+# desse tamanho inviabiliza o repositório e o deploy.
+#
+# As REGRAS já estão no código (prompt do agente + migrations), que é o
+# que precisa de histórico.
+# ------------------------------------------------------------
+*.pptx
+*.docx
+*.pdf
+*.xlsx
+modulo-propostas/Orçamentos/
+
+# saída de teste
+teste.html
