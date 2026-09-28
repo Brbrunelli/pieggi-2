@@ -14,6 +14,7 @@ export default function Login() {
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [erro, setErro] = useState<string | null>(null)
+  const [aviso, setAviso] = useState<string | null>(null)
   const [enviando, setEnviando] = useState(false)
 
   if (session) return <Navigate to="/" replace />
@@ -21,6 +22,7 @@ export default function Login() {
   async function entrar(e: FormEvent) {
     e.preventDefault()
     setErro(null)
+    setAviso(null)
     setEnviando(true)
     const { error } = await supabase.auth.signInWithPassword({ email, password: senha })
     setEnviando(false)
@@ -31,6 +33,38 @@ export default function Login() {
           : error.message
       )
     }
+  }
+
+  /**
+   * Manda o e-mail de recuperação.
+   *
+   * `redirectTo` usa a origem da página atual, então funciona tanto em
+   * localhost quanto em produção sem configuração no código. O endereço
+   * precisa estar liberado em Authentication → URL Configuration no
+   * Supabase, senão o link volta para o lugar errado.
+   *
+   * A resposta é a MESMA exista ou não a conta: dizer "esse e-mail não
+   * existe" entrega para qualquer curioso quem trabalha aqui.
+   */
+  async function recuperar() {
+    setErro(null)
+    setAviso(null)
+    if (!email) {
+      setErro('Escreva o seu e-mail acima primeiro.')
+      return
+    }
+    setEnviando(true)
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/nova-senha`,
+    })
+    setEnviando(false)
+    if (error) {
+      setErro(error.message)
+      return
+    }
+    setAviso(
+      `Se existir uma conta com ${email}, o link para criar uma senha nova chegou por e-mail. Confira a caixa de spam.`
+    )
   }
 
   return (
@@ -97,10 +131,24 @@ export default function Login() {
                 {erro}
               </p>
             )}
+            {aviso && (
+              <p className="border-l-[3px] border-green-700 bg-white py-3 pl-4 pr-3 text-[13px] text-green-800">
+                {aviso}
+              </p>
+            )}
 
             <Button type="submit" className="w-full !py-3" disabled={enviando}>
               {enviando ? 'ENTRANDO…' : 'ENTRAR'}
             </Button>
+
+            <button
+              type="button"
+              onClick={recuperar}
+              disabled={enviando}
+              className="block w-full text-center text-[11px] tracking-[0.08em] text-neutral-500 underline transition-colors hover:text-neutral-900 disabled:opacity-50"
+            >
+              ESQUECI MINHA SENHA
+            </button>
           </div>
 
           <p className="mt-8 text-[11px] leading-relaxed text-neutral-500">

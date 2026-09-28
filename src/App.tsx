@@ -4,6 +4,7 @@ import { AuthProvider, RequireAuth, RequirePermissao } from '@/lib/auth'
 import Layout from '@/components/Layout'
 import Login from '@/pages/Login'
 import NaoEncontrado from '@/pages/NaoEncontrado'
+import NovaSenha from '@/pages/NovaSenha'
 import Dashboard from '@/pages/Dashboard'
 import EventosList from '@/pages/eventos/EventosList'
 import EventoForm from '@/pages/eventos/EventoForm'
@@ -38,6 +39,10 @@ export default function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
+            {/* fora do RequireAuth: a pessoa chega aqui pelo link do
+                e-mail, e a sessão de recuperação é criada pela própria
+                página — exigir login antes seria círculo fechado */}
+            <Route path="/nova-senha" element={<NovaSenha />} />
             <Route
               element={
                 <RequireAuth>

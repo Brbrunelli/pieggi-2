@@ -141,12 +141,22 @@ export default function Layout() {
           <div className="pg-key mt-0.5 !text-neutral-700">
             {profile?.role ? PAPEL_LABEL[profile.role] : ''}
           </div>
-          <button
-            onClick={signOut}
-            className="mt-3 text-[11px] tracking-[0.14em] text-neutral-500 transition-colors duration-300 hover:text-white"
-          >
-            SAIR
-          </button>
+          <div className="mt-3 flex flex-col gap-1.5">
+            {/* cada um troca a própria senha: antes só o admin conseguia,
+                pelo painel do Supabase */}
+            <NavLink
+              to="/nova-senha"
+              className="text-[11px] tracking-[0.14em] text-neutral-500 transition-colors duration-300 hover:text-white"
+            >
+              TROCAR SENHA
+            </NavLink>
+            <button
+              onClick={signOut}
+              className="text-left text-[11px] tracking-[0.14em] text-neutral-500 transition-colors duration-300 hover:text-white"
+            >
+              SAIR
+            </button>
+          </div>
         </div>
       </aside>
 
