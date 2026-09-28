@@ -24,3 +24,6 @@ modulo-propostas/Orçamentos/
 
 # saída de teste
 teste.html
+
+.vercel
+.env*
