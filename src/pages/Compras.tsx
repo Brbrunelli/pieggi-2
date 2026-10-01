@@ -7,6 +7,11 @@ import type { EventService, PieggiEvent } from '@/types'
 import { EVENT_STATUS_LABEL } from '@/types'
 import { consolidarCompras, type LinhaFonte, type SecaoCompra } from '@/engine/compras'
 import { baixarBlob } from '@/lib/documentos'
+import { useNavigate } from 'react-router-dom'
+import { usePermissoes } from '@/lib/permissoes'
+import { useFornecedores } from '@/pages/compras/Fornecedores'
+import { lerQuantidade, sugerirFornecedor } from '@/engine/financeiro'
+import type { NovoPedidoDaLista } from '@/tipos/compras'
 
 interface BlocoProg {
   serviceId: string
@@ -26,8 +31,38 @@ export default function Compras() {
   const [dataInicio, setDataInicio] = useState('')
   const [dataFim, setDataFim] = useState('')
   const [secoes, setSecoes] = useState<SecaoCompra[] | null>(null)
+  /** eventos usados no último "consolidar" — é deles que os itens da lista vêm */
+  const [eventosConsolidados, setEventosConsolidados] = useState<string[]>([])
   const [msg, setMsg] = useState<string | null>(null)
   const [ocultarComprados, setOcultarComprados] = useState(false)
+  const navigate = useNavigate()
+  const { pedirCompra } = usePermissoes()
+  const { data: fornecedores } = useFornecedores()
+
+  /**
+   * Leva os itens da seção para um pedido de compra novo. Só transporta —
+   * o cálculo da lista não muda. Linha de TOTAL fica de fora; quantidade
+   * que não começa com número vai junto na descrição para alguém ajustar.
+   */
+  function gerarPedido(s: SecaoCompra) {
+    // os eventos DA LISTA NA TELA — se a pessoa mexeu na seleção depois de
+    // consolidar, a seleção nova não vale para estes itens
+    const evento = eventosConsolidados.length === 1 ? eventosConsolidados[0] : null
+    const novoPedido: NovoPedidoDaLista = {
+      origem: s.titulo,
+      eventosDaLista: eventosConsolidados,
+      fornecedorChave: sugerirFornecedor(s.titulo, fornecedores ?? [])?.chave ?? null,
+      itens: s.linhas
+        .filter((l) => !l.item.startsWith('TOTAL'))
+        .map((l) => {
+          const q = lerQuantidade(l.quantidade)
+          return q
+            ? { descricao: l.item, quantidade: q.quantidade, unidade: q.unidade, event_id: evento }
+            : { descricao: `${l.item} — ${l.quantidade}`, quantidade: 0, unidade: 'un', event_id: evento }
+        }),
+    }
+    navigate('/compras/pedidos', { state: { novoPedido } })
+  }
 
   const { data: eventos } = useQuery({
     queryKey: ['eventos-com-programacao'],
@@ -113,6 +148,7 @@ export default function Compras() {
     }
     const r = consolidarCompras(linhasFonte, dataInicio || undefined, dataFim || undefined)
     setSecoes(r)
+    setEventosConsolidados([...selecionados])
   }
 
   async function exportarXlsx() {
@@ -252,7 +288,18 @@ export default function Compras() {
       {secoes && (
         <div className="space-y-4">
           {secoes.map((s) => (
-            <Card key={s.titulo} title={s.titulo}>
+            <Card
+              key={s.titulo}
+              title={s.titulo}
+              actions={
+                pedirCompra &&
+                s.linhas.length > 0 && (
+                  <Button variant="ghost" className="!px-2 !py-1 text-[11px]" onClick={() => gerarPedido(s)}>
+                    Gerar pedido ao fornecedor →
+                  </Button>
+                )
+              }
+            >
               <table className="w-full border-collapse">
                 <thead>
                   <tr>

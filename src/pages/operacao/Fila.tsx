@@ -11,6 +11,7 @@ import { supabase } from '@/lib/supabase'
 import { Badge, Button, Card, EmptyState, PageTitle, Td, Th } from '@/components/ui'
 import { ETAPA_FECHADO, nomeCliente, type PieggiEvent } from '@/types'
 import { formatDiaMes } from '@/engine'
+import { hojeLocal } from '@/engine/datas'
 
 export type FaseOperacao = 'programacao' | 'producao'
 
@@ -77,7 +78,7 @@ export default function FilaOperacao({ fase }: { fase: FaseOperacao }) {
       ])
       if (evRes.error) throw evRes.error
 
-      const hoje = new Date().toISOString().slice(0, 10)
+      const hoje = hojeLocal()
       const servicos = (servRes.data ?? []) as { event_id: string; dia: string }[]
       const artefatos = (artRes.data ?? []) as { event_id: string; aprovado_em: string | null }[]
 

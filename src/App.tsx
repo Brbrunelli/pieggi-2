@@ -27,6 +27,23 @@ import Catalogo from '@/pages/admin/Catalogo'
 import Precos from '@/pages/admin/Precos'
 import Regras from '@/pages/admin/Regras'
 import Notificacoes from '@/pages/admin/Notificacoes'
+import Materiais from '@/pages/admin/Materiais'
+import ChecklistModelos from '@/pages/admin/ChecklistModelos'
+import Campo from '@/pages/campo/Campo'
+import Rua from '@/pages/campo/Rua'
+import Freelancers from '@/pages/campo/Freelancers'
+import Motorista from '@/pages/campo/Motorista'
+import Transporte from '@/pages/campo/Transporte'
+import Fornecedores from '@/pages/compras/Fornecedores'
+import Pedidos from '@/pages/compras/Pedidos'
+import ReceberMercadoria from '@/pages/compras/Receber'
+import Pagar from '@/pages/financeiro/Pagar'
+import Caixa from '@/pages/financeiro/Caixa'
+import Estacao from '@/pages/producao/Estacao'
+import Expedicao from '@/pages/producao/Expedicao'
+import Escala from '@/pages/campo/Escala'
+import CRM from '@/pages/comercial/CRM'
+import { usePermissoes } from '@/lib/permissoes'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
@@ -50,7 +67,7 @@ export default function App() {
                 </RequireAuth>
               }
             >
-              <Route path="/" element={<Dashboard />} />
+              <Route path="/" element={<Inicio />} />
               <Route path="/eventos/:id" element={<EventoDetail />} />
 
               {/* Comercial — funil, proposta e estúdio mostram valores;
@@ -66,6 +83,8 @@ export default function App() {
                 <Route path="/eventos/novo" element={<EventoForm />} />
                 <Route path="/briefing" element={<Briefing />} />
                 <Route path="/cs" element={<CS />} />
+                <Route path="/crm" element={<CRM />} />
+                {/* /crm fica dentro do bloco do comercial: verComercial já trava a URL */}
                 <Route path="/eventos/:id/editar" element={<EventoForm />} />
                 <Route path="/eventos/:id/proposta" element={<Proposta />} />
                 <Route path="/eventos/:id/contrato" element={<Contrato />} />
@@ -109,6 +128,102 @@ export default function App() {
               <Route path="/operacao/plaquinhas" element={<Navigate to="/operacao" replace />} />
               <Route path="/compras" element={<Compras />} />
 
+              {/* Produção — uma tela por estação, para a TV da cozinha */}
+              <Route
+                path="/producao/:estacao"
+                element={
+                  <RequirePermissao pode={(p) => p.marcarPronto || p.ehAdmin} area="a tela de produção">
+                    <Estacao />
+                  </RequirePermissao>
+                }
+              />
+              <Route
+                path="/expedicao"
+                element={
+                  <RequirePermissao pode={(p) => p.conferirCampo} area="a expedição">
+                    <Expedicao />
+                  </RequirePermissao>
+                }
+              />
+
+              {/* Compras — fornecedor é cadastro de compra; o pedido vira conta a pagar */}
+              <Route
+                path="/compras/pedidos"
+                element={
+                  <RequirePermissao pode={(p) => p.verCompras} area="os pedidos de compra">
+                    <Pedidos />
+                  </RequirePermissao>
+                }
+              />
+              <Route
+                path="/compras/fornecedores"
+                element={
+                  <RequirePermissao pode={(p) => p.verCompras} area="os fornecedores">
+                    <Fornecedores />
+                  </RequirePermissao>
+                }
+              />
+              <Route
+                path="/compras/receber"
+                element={
+                  <RequirePermissao pode={(p) => p.receberCompra} area="o recebimento de mercadoria">
+                    <ReceberMercadoria />
+                  </RequirePermissao>
+                }
+              />
+              <Route path="/rua/fornecedores" element={<Navigate to="/compras/fornecedores" replace />} />
+
+              {/* Rua — depois da produção: saída, montagem, desmontagem.
+                  Mesma trava da operação: só com contrato assinado. */}
+              <Route
+                path="/eventos/:id/campo"
+                element={
+                  <FaseGuard>
+                    <Campo />
+                  </FaseGuard>
+                }
+              />
+              <Route
+                path="/rua"
+                element={
+                  <RequirePermissao pode={(p) => p.conferirCampo} area="a rua">
+                    <Rua />
+                  </RequirePermissao>
+                }
+              />
+              <Route
+                path="/rua/transporte"
+                element={
+                  <RequirePermissao pode={(p) => p.conferirCampo || p.verEquipe} area="o transporte">
+                    <Transporte />
+                  </RequirePermissao>
+                }
+              />
+              <Route
+                path="/motorista"
+                element={
+                  <RequirePermissao pode={(p) => p.ehMotorista || p.administrar} area="as viagens">
+                    <Motorista />
+                  </RequirePermissao>
+                }
+              />
+              <Route
+                path="/rua/escala"
+                element={
+                  <RequirePermissao pode={(p) => p.verEquipe} area="a escala">
+                    <Escala />
+                  </RequirePermissao>
+                }
+              />
+              <Route
+                path="/rua/freelancers"
+                element={
+                  <RequirePermissao pode={(p) => p.verEquipe} area="o cadastro de freelancers">
+                    <Freelancers />
+                  </RequirePermissao>
+                }
+              />
+
               {/* Financeiro — NF e contas a receber: caixa da empresa,
                   separado do preço de venda que o comercial vê */}
               <Route
@@ -120,6 +235,8 @@ export default function App() {
               >
                 <Route path="/financeiro/notas" element={<Notas />} />
                 <Route path="/financeiro/receber" element={<Receber />} />
+                <Route path="/financeiro/pagar" element={<Pagar />} />
+                <Route path="/financeiro/caixa" element={<Caixa />} />
               </Route>
               {/* cadastro fiscal: admin cadastra, financeiro consulta */}
               <Route
@@ -151,6 +268,8 @@ export default function App() {
                 <Route path="/admin/catalogo" element={<Catalogo />} />
                 <Route path="/admin/regras" element={<Regras />} />
                 <Route path="/admin/notificacoes" element={<Notificacoes />} />
+                <Route path="/admin/materiais" element={<Materiais />} />
+                <Route path="/admin/checklist" element={<ChecklistModelos />} />
               </Route>
 
               {/* qualquer outro endereço: sem isto a tela ficava BRANCA e
@@ -162,4 +281,10 @@ export default function App() {
       </AuthProvider>
     </QueryClientProvider>
   )
+}
+
+/** O motorista não tem painel: a tela inicial dele são as viagens. */
+function Inicio() {
+  const { ehMotorista } = usePermissoes()
+  return ehMotorista ? <Navigate to="/motorista" replace /> : <Dashboard />
 }

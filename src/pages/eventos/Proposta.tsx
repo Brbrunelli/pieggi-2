@@ -812,7 +812,10 @@ export default function Proposta() {
   const checks: { ok: boolean; nivel: 'erro' | 'aviso'; label: string }[] = [
     { ok: Boolean(evento.price_table_id), nivel: 'erro', label: 'Tabela de preço definida (1ª pergunta) e registrada no topo' },
     { ok: Boolean(pax), nivel: 'erro', label: `PAX exato informado (${pax || '—'})` },
-    { ok: evento.endereco_confirmado, nivel: 'erro', label: 'Endereço completo CONFIRMADO (nunca deduzido)' },
+    { ok: Boolean(evento.endereco?.trim()), nivel: 'erro', label: 'Endereço completo informado (nunca deduzido)' },
+    // andar + acesso de carga + com quem pode ser confirmado no pós-venda;
+    // quem trava é a operação (comanda e viagem), não a proposta
+    { ok: evento.endereco_confirmado, nivel: 'aviso', label: evento.endereco_confirmado ? 'Endereço, andar e acesso de carga confirmados com o cliente' : 'Endereço ainda não confirmado (andar, doca e com quem) — confirmar até o pós-venda' },
     { ok: semHorario.length === 0, nivel: 'erro', label: semHorario.length ? `${semHorario.length} serviço(s) sem horário início+fim` : 'Todos os serviços com horário início + fim' },
     { ok: semPreco.length === 0, nivel: 'erro', label: semPreco.length ? `${semPreco.length} serviço(s) SEM PREÇO na tabela` : 'Todos os serviços com preço (tabela ou manual justificado)' },
     { ok: cmv.status !== 'bloqueado', nivel: 'erro', label: `Trava CMV: ${cmv.mensagem}` },

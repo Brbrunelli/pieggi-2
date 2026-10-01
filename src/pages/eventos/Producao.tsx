@@ -128,6 +128,34 @@ export default function Producao() {
 
   const { data: pedidos } = usePedidos(id)
 
+  // saída PROGRAMADA (viagem da Adriana, 0032). Quando existe, ela vai no
+  // papel no lugar da estimativa "servir −3h, conferir Adriana" — era essa
+  // estimativa que chegava errada na mão da equipe.
+  const { data: entregas } = useQuery({
+    queryKey: ['producao-viagens', id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('viagens')
+        .select('dia, saida_prevista, profiles:motorista_id (nome)')
+        .eq('event_id', id!)
+        .eq('tipo', 'entrega')
+        .neq('status', 'cancelada')
+        .order('saida_prevista')
+      return (data ?? []) as unknown as {
+        dia: string
+        saida_prevista: string
+        profiles: { nome: string } | null
+      }[]
+    },
+  })
+
+  function saidaDoDia(diaISO: string, estimada: string): string {
+    const v = entregas?.find((x) => x.dia === diaISO)
+    if (!v) return estimada
+    const [h, m] = v.saida_prevista.split(':')
+    return `${h}h${m} — PROGRAMADA${v.profiles?.nome ? ` (motorista ${v.profiles.nome})` : ''}`
+  }
+
   const pax = evento?.pax ?? 0
   const startseFixo =
     evento?.clients?.tipo === 'startse' ||
@@ -206,6 +234,12 @@ export default function Producao() {
     setMsg(null)
 
     // gates: o que não pode sair errado para a cozinha
+    if (!evento.endereco_confirmado) {
+      setMsg(
+        '🛑 Endereço do evento não confirmado. A comanda leva o endereço para a rua — confirme no cadastro do evento antes de gerar.'
+      )
+      return
+    }
     if (aRotear > 0) {
       setMsg(
         `🛑 ${aRotear} item(ns) da programação sem estação definida. Ajuste a Programação — a produção não chuta estação.`
@@ -242,7 +276,7 @@ export default function Producao() {
         startseFixo,
         dias: comandas.dias.map((d) => ({
           diaISO: d.diaISO,
-          saida: d.saida,
+          saida: saidaDoDia(d.diaISO, d.saida),
           quente: d.secoes.quente,
           fria: d.secoes.fria,
           confeitaria: d.secoes.confeitaria,
@@ -453,7 +487,7 @@ export default function Producao() {
             <Card
               key={d.diaISO}
               title={`🔥 Comandas · DIA ${di + 1} — ${formatDiaMes(d.diaISO)}`}
-              actions={<span className="text-xs text-neutral-500">{d.saida}</span>}
+              actions={<span className="text-xs text-neutral-500">{saidaDoDia(d.diaISO, d.saida)}</span>}
             >
               <div className="space-y-4">
                 {SECOES.filter(({ key }) => d.secoes[key].length).map(({ key, label }) => (
@@ -469,6 +503,8 @@ export default function Producao() {
                               ? 'text-red-700'
                               : l.destaque === 'amarelo'
                                 ? 'text-amber-800'
+                                : l.destaque === 'azul'
+                                  ? 'text-blue-800'
                                 : '')
                           }
                         >

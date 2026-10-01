@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import { garantirClienteNoCRM } from '@/lib/crm'
 import { useAuth } from '@/lib/auth'
 import { Button, Card, Input, PageTitle, Select, Textarea } from '@/components/ui'
 import { type Client, type PriceTable, type PieggiEvent, type PipelineStage, type Restricao } from '@/types'
@@ -54,6 +55,7 @@ export default function EventoForm() {
     endereco: '',
     endereco_confirmado: false,
     local_detalhe: '',
+    acesso_carga: '',
     preco_a_definir: false,
     obs: '',
   })
@@ -84,6 +86,7 @@ export default function EventoForm() {
           endereco: e.endereco ?? '',
           endereco_confirmado: e.endereco_confirmado,
           local_detalhe: e.local_detalhe ?? '',
+          acesso_carga: e.acesso_carga ?? '',
           preco_a_definir: e.preco_a_definir ?? false,
           obs: e.obs ?? '',
         })
@@ -100,7 +103,9 @@ export default function EventoForm() {
       ...f,
       client_id: clientId,
       endereco: c?.endereco_fixo && c.endereco ? c.endereco : f.endereco,
-      endereco_confirmado: Boolean(c?.endereco_fixo),
+      // endereço fixo pré-preenche o acesso — mas a confirmação (andar e
+      // com quem) é por evento: a sala da StartSe muda de evento para evento
+      acesso_carga: c?.endereco_fixo && c.acesso_carga ? c.acesso_carga : f.acesso_carga,
     }))
   }
 
@@ -112,23 +117,34 @@ export default function EventoForm() {
     if (!form.price_table_id) return setErro('Selecione a TABELA DE PREÇO (sempre a 1ª pergunta).')
     if (!form.pax || Number(form.pax) <= 0) return setErro('Informe o PAX exato (nunca deduzir).')
     if (!form.endereco.trim()) return setErro('Informe o ENDEREÇO completo.')
-    if (!form.endereco_confirmado)
-      return setErro('Confirme o endereço (marque a caixa) — nunca deduzido, mesmo cliente recorrente.')
+    // a CONFIRMAÇÃO (andar, acesso e com quem) não trava a venda: pode
+    // ser feita no pós-venda, na tela do evento. Quem trava é a operação.
 
     if (!form.client_id && !form.cliente_nome.trim())
       return setErro('Informe o CLIENTE — selecione um cadastro ou digite o nome do cliente novo.')
 
     setSalvando(true)
+    // cliente novo entra no CRM sozinho (0037). Se falhar, o evento salva
+    // com o nome digitado e aparece no aviso do CRM para cadastrar depois.
+    let clientId = form.client_id || null
+    if (!clientId)
+      clientId = await garantirClienteNoCRM({
+        nome: form.cliente_nome,
+        contato: form.contato.trim() || null,
+        origem: 'evento',
+      }).catch(() => null)
     const payload = {
       nome: form.nome.trim(),
       contato: form.contato.trim() || null,
-      client_id: form.client_id || null,
-      cliente_nome: form.client_id ? null : form.cliente_nome.trim(),
+      client_id: clientId,
+      cliente_nome: clientId ? null : form.cliente_nome.trim(),
       price_table_id: form.price_table_id,
       pax: Number(form.pax),
       endereco: form.endereco.trim(),
-      endereco_confirmado: form.endereco_confirmado,
+      // endereco_confirmado NÃO vai daqui: quem confirma é a tela de
+      // confirmação (com quem), e mexer no endereço derruba no banco (0033)
       local_detalhe: form.local_detalhe.trim() || null,
+      acesso_carga: form.acesso_carga.trim() || null,
       preco_a_definir: form.preco_a_definir,
       pipeline: etapa,
       pipedrive_url: pipedriveUrl.trim() || null,
@@ -267,16 +283,18 @@ export default function EventoForm() {
               value={form.local_detalhe}
               onChange={(e) => setForm({ ...form, local_detalhe: e.target.value })}
             />
-            <label className="flex items-end gap-2 pb-2 text-sm">
-              <input
-                type="checkbox"
-                checked={form.endereco_confirmado}
-                onChange={(e) => setForm({ ...form, endereco_confirmado: e.target.checked })}
-                className="h-4 w-4"
-              />
-              Endereço CONFIRMADO (não deduzido)
-            </label>
+            <Textarea
+              label="Como a carga entra (doca / portaria / elevador / horário)"
+              rows={2}
+              value={form.acesso_carga}
+              onChange={(e) => setForm({ ...form, acesso_carga: e.target.value })}
+            />
           </div>
+          <p className="mt-3 text-xs text-neutral-500">
+            📍 Sempre perguntar andar e como a carga entra. A <b>confirmação com o cliente</b> (com
+            quem) fica na tela do evento — pode ser agora ou no pós-venda; sem ela a comanda não sai.
+            {editando && form.endereco_confirmado && ' Mudar endereço, andar ou acesso derruba a confirmação.'}
+          </p>
           <p className="mt-3 text-xs text-neutral-500">
             4️⃣ Os horários (início <b>e</b> fim) são informados por serviço, na tela do evento —
             eles definem a reposição e o split manhã/tarde.

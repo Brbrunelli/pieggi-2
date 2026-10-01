@@ -127,7 +127,7 @@ export function rotearItem(texto: string, cat?: CatalogItem | null): EstacaoComa
   // de palavra não funciona depois de letra acentuada, então /\bcafé\b/
   // simplesmente nunca casa e o café caía em "a rotear".
   if (
-    /(caf[ée]|leite|[áa]gua quente|ch[áa]|suco|refrigerante|cerveja|[áa]gua|refresqueira|achocolatado|garrafa t[ée]rmica)/.test(
+    /(caf[ée]|leite|[áa]gua quente|ch[áa]|suco|refrigerante|cerveja|[áa]gua|vinho|espumante|champagne|prosecco|drink|refresqueira|achocolatado|garrafa t[ée]rmica)/.test(
       t
     )
   )
@@ -181,7 +181,7 @@ export interface LinhaEstrutura {
   qtd: string
   item: string
   receita: string
-  destaque?: 'amarelo' | 'vermelho' | null
+  destaque?: 'amarelo' | 'vermelho' | 'azul' | null
 }
 
 const cima = Math.ceil
@@ -272,7 +272,7 @@ export function gerarEstrutura(i: EstruturaInput): LinhaEstrutura[] {
       qtd: '—',
       item: 'Gelo',
       receita: 'NÃO ENVIAR — StartSe sem HH (gelo só em HH)',
-      destaque: 'amarelo',
+      destaque: 'vermelho', // alerta (rev. 24/09: amarelo = finalizar no local)
     })
   }
 
@@ -339,13 +339,13 @@ export function gerarEstrutura(i: EstruturaInput): LinhaEstrutura[] {
   // blocos fixos (por nº de freelancers, não por pax)
   const porFreela = i.freelancers ? `${i.freelancers} un` : 'conforme freelancers (Adriana)'
   out.push(
-    { qtd: porFreela, item: 'Uniforme Pieggi', receita: `por nº de freelancers${naoEnviar}`, destaque: i.startseFixo ? 'amarelo' : null },
-    { qtd: porFreela, item: 'Luvas + toucas', receita: `por nº de freelancers${naoEnviar}`, destaque: i.startseFixo ? 'amarelo' : null },
+    { qtd: porFreela, item: 'Uniforme Pieggi', receita: `por nº de freelancers${naoEnviar}`, destaque: i.startseFixo ? 'vermelho' : null },
+    { qtd: porFreela, item: 'Luvas + toucas', receita: `por nº de freelancers${naoEnviar}`, destaque: i.startseFixo ? 'vermelho' : null },
     {
       qtd: '1 kit',
       item: 'Kit de limpeza',
       receita: `detergente, esponja, pano de chão, rodo, papel toalha, álcool 70%${naoEnviar}`,
-      destaque: i.startseFixo ? 'amarelo' : null,
+      destaque: i.startseFixo ? 'vermelho' : null,
     },
     { qtd: '1', item: 'Infra', receita: 'toalhas + extensão' },
     // §17.6 — arranjo de flores em TODO evento, linha própria para ser

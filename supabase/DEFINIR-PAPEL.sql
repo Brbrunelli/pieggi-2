@@ -12,11 +12,16 @@
 --   producao   → COZINHA: vê a operação, imprime e dá baixa do que ficou
 --                pronto — e não enxerga nada de dinheiro
 --   compras    → COZINHA + lista de compras (a lista não tem valores)
+--   financeiro → NF, contas a receber e cadastro fiscal
+--   motorista  → só as próprias viagens (endereço, horário, contato)
+--   logistica  → RUA (Adriana + coordenadores): escala de freelancers,
+--                conferência de material, checklist com foto, sobras e
+--                encerramento do evento. Não vê preço de venda
 -- ============================================================
 
 -- 1) troque o e-mail e o papel e rode:
 update public.profiles p
-set role  = 'producao',      -- admin | comercial | producao | compras
+set role  = 'producao',      -- admin | comercial | producao | compras | financeiro | logistica | motorista
     ativo = true,
     email = u.email
 from auth.users u

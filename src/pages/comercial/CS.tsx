@@ -33,6 +33,8 @@ import {
   type PieggiEvent,
 } from '@/types'
 import { formatBRL, formatDiaMes } from '@/engine'
+import EnderecosAConfirmar from '@/components/EnderecosAConfirmar'
+import { hojeLocal, isoLocal } from '@/engine/datas'
 
 interface EventoCS extends PieggiEvent {
   clients: { id: string; nome: string; telefone: string | null; email: string | null } | null
@@ -71,12 +73,12 @@ interface ClienteCS {
   acionaveis: Tarefa[]
 }
 
-const hojeISO = () => new Date().toISOString().slice(0, 10)
+const hojeISO = () => hojeLocal()
 
 function somaDias(iso: string, n: number): string {
   const d = new Date(iso + 'T12:00')
   d.setDate(d.getDate() + n)
-  return d.toISOString().slice(0, 10)
+  return isoLocal(d)
 }
 
 function diasEntre(de: string, ate: string): number {
@@ -233,6 +235,10 @@ export default function CS() {
         for (const t of templates) {
           if (!t.ativo) continue
           if (feitos.has(`${ev.id}|${t.id}`)) continue
+          // pós-evento espera a rua encerrar (0030): pedir nota antes de
+          // conferir o que voltou e o que quebrou é perguntar às cegas.
+          // Evento que nunca entrou na rua (anterior à 0030) segue pela data.
+          if (t.momento === 'pos' && ev.campo_etapa && ev.campo_etapa !== 'encerrado') continue
           if (t.momento === 'pre' && t.min_antecedencia_dias > 0) {
             const base = (ev.assinadoEm ?? ev.pipeline_em ?? '').slice(0, 10)
             if (!base || diasEntre(base, ev.primeiraData) < t.min_antecedencia_dias) continue
@@ -420,6 +426,9 @@ export default function CS() {
       >
         Sucesso do cliente
       </PageTitle>
+
+      {/* pós-venda: confirmar endereço, andar e doca antes de virar problema na rua */}
+      <EnderecosAConfirmar />
 
       {msg && <p className="mb-4 rounded-lg bg-neutral-50 px-3 py-2 text-sm">{msg}</p>}
 

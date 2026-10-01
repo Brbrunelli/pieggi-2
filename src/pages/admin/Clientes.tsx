@@ -16,6 +16,7 @@ const vazio = {
   tipo: 'externo' as ClientKind,
   endereco: '',
   endereco_fixo: false,
+  acesso_carga: '',
   marca_agua: 'qualquer',
   marca_refri: 'Coca-Cola',
   marca_cerveja: 'Heineken',
@@ -46,6 +47,7 @@ export default function Clientes() {
       tipo: c.tipo,
       endereco: c.endereco ?? '',
       endereco_fixo: c.endereco_fixo,
+      acesso_carga: c.acesso_carga ?? '',
       marca_agua: c.marca_agua,
       marca_refri: c.marca_refri,
       marca_cerveja: c.marca_cerveja,
@@ -58,7 +60,7 @@ export default function Clientes() {
   async function salvar(e: FormEvent) {
     e.preventDefault()
     setErro(null)
-    const payload = { ...form, endereco: form.endereco || null }
+    const payload = { ...form, endereco: form.endereco || null, acesso_carga: form.acesso_carga.trim() || null }
     const r = editId
       ? await supabase.from('clients').update(payload).eq('id', editId)
       : await supabase.from('clients').insert(payload)
@@ -102,6 +104,14 @@ export default function Clientes() {
             </label>
             <div className="md:col-span-3">
               <Input label="Endereço" value={form.endereco} onChange={(e) => setForm({ ...form, endereco: e.target.value })} />
+            </div>
+            <div className="md:col-span-3">
+              <Input
+                label="Acesso de carga fixo (doca / portaria / elevador / horário)"
+                placeholder="Pré-preenche os eventos deste cliente — o andar e a confirmação continuam por evento"
+                value={form.acesso_carga}
+                onChange={(e) => setForm({ ...form, acesso_carga: e.target.value })}
+              />
             </div>
             <Input label="Água" value={form.marca_agua} onChange={(e) => setForm({ ...form, marca_agua: e.target.value })} />
             <Input label="Refrigerante (sempre LATA)" value={form.marca_refri} onChange={(e) => setForm({ ...form, marca_refri: e.target.value })} />

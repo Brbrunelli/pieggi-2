@@ -24,11 +24,20 @@ import {
   WidthType,
 } from 'docx'
 import type { Restricao } from '@/types'
+import {
+  CHECKLIST_COPEIRAS,
+  LEGENDA_LINHAS,
+  LUIZ_WHATSAPP,
+  TERMO_ACEITE,
+  TERMO_TEXTO,
+  TERMO_TITULO,
+} from './copeiras'
 
 const CONTENT = 10466
 const GREY = 'D9D9D9'
 const RED_BG = 'FDE8E8'
 const YELLOW_BG = 'FFF2CC'
+const BLUE_BG = 'DEEAF6' // linha azul = cuidado de serviço (rev. 24/09)
 
 const BORDER = { style: BorderStyle.SINGLE, size: 4, color: '000000' }
 const BORDERS = {
@@ -44,13 +53,17 @@ export interface LinhaProgramacao {
   qtd: string
   receita: string
   item: string
-  destaque?: 'amarelo' | 'vermelho' | null // amarelo = restrição (vegano/SG/SL); vermelho = alerta
+  // rev. 24/09 (Claudinho): amarelo = finalizar no local · azul = cuidado de serviço ·
+  // vermelho = restrição (vegano/SG/SL) e alerta
+  destaque?: 'amarelo' | 'vermelho' | 'azul' | null
 }
 
 export interface ServicoProgramacao {
   titulo: string // "COFFEE BREAK EXECUTIVE — MANHÃ — 09h00–10h00 — 22/07 — 50 PAX"
   linhas: LinhaProgramacao[]
   obsEquipe?: string // tarja amarela
+  /** ISO — separa o documento por dia. Sem dia = vale para o evento todo (vai no fim) */
+  dia?: string
 }
 
 export interface DadosProgramacao {
@@ -175,8 +188,64 @@ function bannerRestricoes(restricoes: Restricao[]): Table {
   })
 }
 
+// Checklist e termo vêm de lib/copeiras.ts — o MESMO texto da tela da rua.
 function checklistCopeiras(): Table {
-  const titulo = (t: string) => p(t, { bold: true })
+  return new Table({
+    width: { size: CONTENT, type: WidthType.DXA },
+    columnWidths: [CONTENT],
+    borders: BORDERS,
+    rows: [
+      new TableRow({
+        cantSplit: true,
+        children: [
+          cell([p('CHECKLIST — COPEIRAS', { bold: true })], { w: CONTENT, shade: GREY }),
+        ],
+      }),
+      ...CHECKLIST_COPEIRAS.map(
+        (i) =>
+          new TableRow({
+            cantSplit: true,
+            children: [
+              cell([p(`☐ ${i.texto}`, { size: 22, bold: i.destaque })], {
+                w: CONTENT,
+                shade: i.destaque ? 'FFEB00' : undefined,
+              }),
+            ],
+          })
+      ),
+    ],
+  })
+}
+
+/** A legenda das cores, logo abaixo do checklist — como no padrão do Claudinho. */
+function legendaLinhas(): Table {
+  const fundo = { amarelo: YELLOW_BG, azul: BLUE_BG, vermelho: RED_BG }
+  return new Table({
+    width: { size: CONTENT, type: WidthType.DXA },
+    columnWidths: [CONTENT],
+    borders: BORDERS,
+    rows: LEGENDA_LINHAS.map(
+      (l) =>
+        new TableRow({
+          cantSplit: true,
+          children: [
+            cell(
+              [
+                new Paragraph({
+                  spacing: { before: 0, after: 0 },
+                  children: [run(`${l.titulo} `, { bold: true, size: 22 }), run(l.texto, { size: 22 })],
+                }),
+              ],
+              { w: CONTENT, shade: fundo[l.cor] }
+            ),
+          ],
+        })
+    ),
+  })
+}
+
+/** Termo em branco, um por dia — a copeira preenche, colhe a assinatura e fotografa. */
+function termoEntrega(d: DadosProgramacao, diaTxt: string): Table {
   const linha = (t: string) => p(t, { size: 22 })
   return new Table({
     width: { size: CONTENT, type: WidthType.DXA },
@@ -188,29 +257,40 @@ function checklistCopeiras(): Table {
         children: [
           cell(
             [
-              titulo('CHECKLIST COPEIRAS'),
-              p(
-                'Fotografar cada mesa montada e enviar ao Luiz (WhatsApp): +55 11 97603-8194. Faltando algo, avisar o Luiz.',
-                { bold: true, size: 22 }
-              ),
-              titulo('MONTAGEM / ENTREGA'),
-              linha(
-                '☐ Auditório montado — café + águas c/ e s/ gás   ☐ Coffee break manhã montado   ☐ Almoço montado   ☐ Coffee break tarde montado   ☐ Refresqueiras de suco e chá abastecidas   ☐ Acompanhamentos na mesa (açúcar, adoçante, achocolatado, sachê de chá)   ☐ Plaquinhas de alérgicos na mesa   ☐ Itens sem lactose/sem corante separados e identificados'
-              ),
-              titulo('HIGIENIZAÇÃO / APRESENTAÇÃO'),
-              linha(
-                '☐ Talheres/pratos/copos/louças sem mancha de detergente   ☐ Álcool 70% em tudo antes de expor   ☐ Limpar bicos (ketchup, maionese, mostarda, azeite, vinagre, pimenta, saleiros)   ☐ Verrines/doces/cupcakes limpos, sem marca de transporte   ☐ Pote de Nescau limpo, seco, sem empedrar   ☐ Escaldar garrafas antes do uso   ☐ Utensílios das restrições separados — evitar contaminação cruzada'
-              ),
-              titulo('LAVAGEM P/ IR EMBORA'),
-              linha(
-                '☐ Retirar restos com papel toalha e descartar no lixo antes de lavar travessas/panelas/potes/louças   ☐ Não jogar alimento na pia do cliente'
-              ),
+              p(TERMO_TITULO, { bold: true, align: AlignmentType.CENTER }),
+              p('Pieggi Catering', { bold: true, align: AlignmentType.CENTER, size: 22 }),
+              linha(`Cliente: ${d.contratante}`),
+              linha(`Evento: ${d.evento}`),
+              linha(`Data do evento: ${diaTxt}        Horário: __________`),
+              linha('Data da entrega: ____/____/______        Horário: __________'),
+              linha('O que está sendo entregue: ______________________________________________'),
+              linha('______________________________________________________________________'),
+              ...TERMO_TEXTO.map((t) => linha(t)),
+              p(TERMO_ACEITE, { bold: true, size: 22 }),
+              linha('Nome: ______________________________________________'),
+              linha('Documento ou telefone: __________________'),
+              linha('Assinatura: ______________________________________________'),
+              linha('Entregue por (Pieggi): ______________________________________________'),
+              p(`Copeira: fotografar este termo preenchido e enviar ao Luiz — WhatsApp ${LUIZ_WHATSAPP}.`, {
+                italics: true,
+                size: 20,
+              }),
             ],
             { w: CONTENT }
           ),
         ],
       }),
     ],
+  })
+}
+
+/** "DIA 1 — 29/09" em página nova, para o evento de vários dias sair separado. */
+function cabecalhoDia(n: number, diaISO: string): Paragraph {
+  const [, m, dd] = diaISO.split('-')
+  return new Paragraph({
+    pageBreakBefore: n > 1,
+    spacing: { after: 140 },
+    children: [run(`DIA ${n} — ${dd}/${m}`, { bold: true, size: 32 })],
   })
 }
 
@@ -257,7 +337,7 @@ function tabelaServico(s: ServicoProgramacao, temRestricoes: boolean): Table {
 
   for (const l of s.linhas) {
     const shade =
-      l.destaque === 'amarelo' ? YELLOW_BG : l.destaque === 'vermelho' ? RED_BG : undefined
+      l.destaque === 'amarelo' ? YELLOW_BG : l.destaque === 'vermelho' ? RED_BG : l.destaque === 'azul' ? BLUE_BG : undefined
     const cor = l.destaque === 'vermelho' ? 'C00000' : '000000'
     rows.push(
       new TableRow({
@@ -325,10 +405,31 @@ export async function gerarProgramacaoDocx(d: DadosProgramacao): Promise<Blob> {
     children.push(bannerRestricoes(d.restricoes), spacer())
   }
 
-  children.push(checklistCopeiras(), spacer())
+  // Um bloco por dia: cada dia vai para um local/uma equipe e precisa
+  // do próprio checklist e do próprio termo de sobras (rev. 24/09).
+  const dias = Array.from(new Set(d.servicos.map((s) => s.dia).filter((x): x is string => Boolean(x)))).sort()
+  const temRestricoes = d.restricoes.length > 0
 
-  for (const s of d.servicos) {
-    children.push(tabelaServico(s, d.restricoes.length > 0), spacer())
+  if (dias.length <= 1) {
+    const diaTxt = dias[0] ? dias[0].split('-').reverse().join('/') : d.data
+    children.push(checklistCopeiras(), spacer(), legendaLinhas(), spacer(), termoEntrega(d, diaTxt), spacer())
+    for (const s of d.servicos) children.push(tabelaServico(s, temRestricoes), spacer())
+  } else {
+    dias.forEach((dia, i) => {
+      children.push(
+        cabecalhoDia(i + 1, dia),
+        checklistCopeiras(),
+        spacer(),
+        legendaLinhas(),
+        spacer(),
+        termoEntrega(d, dia.split('-').reverse().join('/')),
+        spacer()
+      )
+      for (const s of d.servicos.filter((x) => x.dia === dia))
+        children.push(tabelaServico(s, temRestricoes), spacer())
+    })
+    // o que vale para o evento inteiro (estrutura, marcas de bebida)
+    for (const s of d.servicos.filter((x) => !x.dia)) children.push(tabelaServico(s, temRestricoes), spacer())
   }
 
   const doc = new Document({

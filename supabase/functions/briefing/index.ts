@@ -53,6 +53,13 @@ Você também NÃO gera o arquivo .pptx: o sistema monta o slide a partir do que
   Conferir cruzado lanches × bebezinhos × verrines × shots × tarteletes.
 - **Contraponto:** sempre 1 vegetariano + 1 não-vegetariano.
 - **GATE dos 3 dados críticos** (nunca deduzir): PAX exato • HORÁRIO início E fim • ENDEREÇO completo.
+- **ENDEREÇO NÃO É SÓ A RUA.** Sempre perguntar também: **andar / sala / auditório**, **como a carga
+  entra** (tem doca? qual rua da doca? portaria de serviço? elevador de carga? horário permitido?
+  precisa cadastrar placa/motorista antes?) e **com quem a equipe fala ao chegar** (nome e telefone).
+  Endereço e horário errados são o erro nº 1 da rua. Se o cliente não souber agora, NÃO trave a
+  proposta: registre em "pendencias" como "confirmar no pós-venda: andar / doca / contato no local".
+  Cliente com endereço fixo: o acesso de carga fixo vem do cadastro, mas o ANDAR/SALA muda a cada
+  evento — pergunte sempre.
 - **É na proposta que se pergunta "É na StartSe?"** — as outras fases herdam. Nunca misturar
   StartSe com não-StartSe.
 - **"cardápio interno"**: quando o cliente escreve "(interna/interno)", vale o cardápio Pieggi real,
@@ -70,7 +77,8 @@ Você também NÃO gera o arquivo .pptx: o sistema monta o slide a partir do que
    ④ WTC (12% de repasse embutido). Nunca calcular sem tabela, nunca misturar, nunca assumir
    pelo nome do cliente.
 2. **PAX** exato. 3. **HORÁRIO** de cada serviço, início E fim (define reposição e o split
-   manhã/tarde). 4. **ENDEREÇO** completo.
+   manhã/tarde). 4. **ENDEREÇO** completo + **andar/sala** + **como a carga entra** (doca/portaria)
+   + **contato no local**.
 Perguntas que travam: Auditório = quantos períodos? • Horário de cada coffee/HH?
 Fluxo: tabela → cardápio no chat → restrições → 3 dados → preços → resumo para OK → proposta.
 
@@ -173,6 +181,7 @@ const SCHEMA = {
     'pax',
     'endereco',
     'local_detalhe',
+    'acesso_carga',
     'preco_a_definir',
     'tabela_sugerida',
     'incluir_institucional',
@@ -201,7 +210,15 @@ const SCHEMA = {
     contato: { type: 'string', description: 'Pessoa de contato.' },
     pax: { type: 'integer', description: 'PAX geral do evento. 0 se não informado.' },
     endereco: { type: 'string', description: 'Endereço completo. "" se não informado.' },
-    local_detalhe: { type: 'string', description: 'Andar/sala/auditório/torre/bloco.' },
+    local_detalhe: {
+      type: 'string',
+      description: 'Andar/sala/auditório/torre/bloco. "" se não informado (e registrar em pendencias).',
+    },
+    acesso_carga: {
+      type: 'string',
+      description:
+        'Como a carga entra: doca (rua da doca), portaria de serviço, elevador de carga, horário permitido, cadastro de placa. Inclua aqui o contato no local se informado. "" se não informado (e registrar em pendencias).',
+    },
     preco_a_definir: {
       type: 'boolean',
       description: 'true quando o cliente ainda não tem preço fechado.',
@@ -384,7 +401,7 @@ function blocoClientes(clientes: Linha[]): string {
   return clientes
     .map(
       (c) =>
-        `- ${c.nome} (${c.tipo}) — ${c.endereco ?? 'sem endereço fixo'} · bebidas: ${c.marca_refri} + ${c.marca_cerveja} + água ${c.marca_agua}`
+        `- ${c.nome} (${c.tipo}) — ${c.endereco ?? 'sem endereço fixo'}${c.acesso_carga ? ` · acesso de carga: ${c.acesso_carga}` : ''} · bebidas: ${c.marca_refri} + ${c.marca_cerveja} + água ${c.marca_agua}`
     )
     .join('\n')
 }
@@ -520,7 +537,9 @@ Deno.serve(async (req) => {
     const [clientesRes, tabelasRes, precosRes, catalogoRes, regrasRes] = await Promise.all([
       supabase
         .from('clients')
-        .select('nome, tipo, endereco, endereco_fixo, marca_agua, marca_refri, marca_cerveja, regras')
+        // '*' e não a lista: o acesso_carga (0033) entra sem quebrar se a
+        // migration ainda não foi aplicada
+        .select('*')
         .eq('ativo', true),
       supabase.from('price_tables').select('id, kind, nome, obs').eq('vigente', true),
       supabase

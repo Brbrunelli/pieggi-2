@@ -22,6 +22,7 @@ import { calcReposicao, duracaoMin, formatDiaMes } from '@/engine'
 import { PedidosEspeciaisCard } from '@/components/PedidosEspeciais'
 import { StatusBadge, usePropostaComercial } from '@/components/StatusComercial'
 import { usePermissoes } from '@/lib/permissoes'
+import ConfirmacaoEndereco from '@/components/ConfirmacaoEndereco'
 
 export default function EventoDetail() {
   const { id } = useParams()
@@ -100,6 +101,11 @@ export default function EventoDetail() {
           {propostaComercial && <StatusBadge status={propostaComercial.status_cliente} />}
           <Badge tone="blue">{EVENT_STATUS_LABEL[evento.status]}</Badge>
         </div>
+      </div>
+
+      {/* endereço, andar e acesso de carga — confirmados com alguém do cliente */}
+      <div className="mb-6 max-w-2xl">
+        <ConfirmacaoEndereco evento={evento} />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

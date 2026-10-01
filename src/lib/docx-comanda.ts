@@ -34,6 +34,7 @@ const GREY = 'D9D9D9'
 const AMBER = 'FFF2CC'
 const YELLOW = 'FFEB00'
 const RED_BG = 'FDE8E8'
+const BLUE_BG = 'DEEAF6' // linha azul = cuidado de serviço (rev. 24/09)
 
 const CORES = {
   quente: '800020',
@@ -47,7 +48,7 @@ export interface ComandaLinha {
   qtd: string
   receita: string
   item: string
-  destaque?: 'amarelo' | 'vermelho' | null
+  destaque?: 'amarelo' | 'vermelho' | 'azul' | null
 }
 
 export interface AlimentacaoDia {
@@ -292,7 +293,8 @@ function tabelaProducao(linhas: ComandaLinha[], cor: string): Table {
     }),
   ]
   for (const l of linhas) {
-    const shade = l.destaque === 'amarelo' ? AMBER : l.destaque === 'vermelho' ? RED_BG : undefined
+    const shade =
+      l.destaque === 'amarelo' ? AMBER : l.destaque === 'vermelho' ? RED_BG : l.destaque === 'azul' ? BLUE_BG : undefined
     const color = l.destaque === 'vermelho' ? 'C00000' : '000000'
     rows.push(
       new TableRow({
@@ -341,7 +343,8 @@ function tabelaExpedicao(linhas: ComandaLinha[], cor: string, tituloSecao?: stri
     })
   )
   for (const l of linhas) {
-    const shade = l.destaque === 'amarelo' ? AMBER : l.destaque === 'vermelho' ? RED_BG : undefined
+    const shade =
+      l.destaque === 'amarelo' ? AMBER : l.destaque === 'vermelho' ? RED_BG : l.destaque === 'azul' ? BLUE_BG : undefined
     const color = l.destaque === 'vermelho' ? 'C00000' : '000000'
     rows.push(
       new TableRow({

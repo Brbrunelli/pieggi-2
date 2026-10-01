@@ -29,6 +29,7 @@ import {
   type PipelineStage,
 } from '@/types'
 import { formatBRL, formatDiaMes } from '@/engine'
+import { hojeLocal } from '@/engine/datas'
 
 type EventoLista = PieggiEvent & {
   clients: { nome: string; tipo: string } | null
@@ -69,7 +70,7 @@ export default function EventosList() {
         supabase.from('event_services').select('event_id, dia'),
       ])
       if (evRes.error) throw evRes.error
-      const hoje = new Date().toISOString().slice(0, 10)
+      const hoje = hojeLocal()
       const servicos = (servRes.data ?? []) as { event_id: string; dia: string }[]
 
       return (evRes.data as (PieggiEvent & { clients: { nome: string; tipo: string } | null })[]).map(

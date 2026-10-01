@@ -123,3 +123,24 @@ export function itemForaDoServico(item: CatalogItem | null, serviceType: Service
   if (!item || !item.servicos.length) return false
   return !item.servicos.includes(serviceType)
 }
+
+// ------------------------------------------------------------
+// rev. 24/09 (Claudinho) — LINHA AZUL = cuidado de serviço
+//
+// O que a copeira precisa CUIDAR durante o serviço (temperatura,
+// reposição), e não montar. Hoje: pão de queijo, que esfria e murcha se
+// for todo para a mesa de uma vez. Item novo entra nesta lista.
+// ------------------------------------------------------------
+
+const CUIDADOS: { padrao: RegExp; texto: string }[] = [
+  {
+    padrao: /p[ãa]o de queijo/i,
+    texto:
+      'servir o mais próximo possível do horário de consumo. Não colocar toda a quantidade de uma vez: assar/dispor metade, manter a outra metade reservada e repor em pequenas quantidades durante o serviço, para não ficar muito tempo exposto e esfriar.',
+  },
+]
+
+/** Texto da linha azul do item, ou null quando o item não pede cuidado de serviço. */
+export function cuidadoDeServico(texto: string): string | null {
+  return CUIDADOS.find((c) => c.padrao.test(texto))?.texto ?? null
+}

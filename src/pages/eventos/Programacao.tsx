@@ -30,6 +30,7 @@ import {
 import { paoDoLanche, recipienteDe } from '@/engine/cardapio'
 import {
   avisoMarcas,
+  cuidadoDeServico,
   finalizacaoNoLocal,
   itemForaDoServico,
   linhaArranjoFlores,
@@ -223,6 +224,8 @@ export default function Programacao() {
               titulo: b.titulo,
               linhas: b.linhas.filter((l) => l.qtd || l.receita || l.item),
               obsEquipe: b.obsEquipe || undefined,
+              // separa o documento por dia, cada um com checklist e termo
+              dia: servicos.find((s) => s.id === b.serviceId)?.dia,
             })
           ),
           // §14.12 e §14.15 — valem para o evento inteiro, não por serviço
@@ -415,7 +418,9 @@ export default function Programacao() {
                           ? 'bg-yellow-50'
                           : l.destaque === 'vermelho'
                             ? 'bg-red-50'
-                            : ''
+                            : l.destaque === 'azul'
+                              ? 'bg-blue-50'
+                              : ''
                       }
                     >
                       <td className="px-1 py-0.5">
@@ -452,8 +457,9 @@ export default function Programacao() {
                           }
                         >
                           <option value="">—</option>
-                          <option value="amarelo">Amarelo (restrição)</option>
-                          <option value="vermelho">Vermelho (alerta)</option>
+                          <option value="amarelo">Amarelo (finalizar no local)</option>
+                          <option value="azul">Azul (cuidado de serviço)</option>
+                          <option value="vermelho">Vermelho (restrição / alerta)</option>
                         </select>
                       </td>
                       {editarOperacao && (
@@ -516,10 +522,11 @@ function tituloServico(s: EventService, pax: number): string {
 }
 
 function destaqueDoItem(c: CatalogItem | null): LinhaProgramacao['destaque'] {
-  // Regra do amarelo: SÓ vegano / sem glúten / sem lactose / sem açúcar.
-  // Vegetariano sozinho NÃO leva amarelo.
+  // Restrição = linha VERMELHA (rev. 24/09: o amarelo passou a ser
+  // "finalizar no local"). SÓ vegano / sem glúten / sem lactose / sem açúcar.
+  // Vegetariano sozinho NÃO leva destaque.
   if (!c?.selo) return null
-  return c.selo === 'vegetariano' ? null : 'amarelo'
+  return c.selo === 'vegetariano' ? null : 'vermelho'
 }
 
 function montarLinhas(
@@ -569,10 +576,13 @@ function montarLinhas(
     if (temMiniLanche && q.item.startsWith('Mini lanche')) continue
     if (temBebezinho && q.item.startsWith('Bolo / bebezinho')) continue
     if (temVerrine && q.item.startsWith('Verrine / shot')) continue
+    // rev. 24/09 — linha AZUL: o que a copeira cuida durante o serviço
+    const cuidado = cuidadoDeServico(q.item)
     linhas.push({
       qtd: `${q.quantidade} ${q.unidade}`,
-      receita: q.memoria,
+      receita: cuidado ? `${q.memoria} — CUIDADO DE SERVIÇO: ${cuidado}` : q.memoria,
       item: q.item,
+      destaque: cuidado ? 'azul' : null,
     })
   }
 
@@ -613,7 +623,7 @@ function montarLinhas(
       })
       // §14.5 — vai sem recheio, copeira monta
       const fin = finalizacaoNoLocal(b.catalog_items)
-      if (fin) linhas.push({ qtd: '', receita: fin.aviso, item: '', destaque: 'vermelho' })
+      if (fin) linhas.push({ qtd: '', receita: fin.aviso, item: '', destaque: 'amarelo' })
     }
   }
 
@@ -658,7 +668,7 @@ function montarLinhas(
     })
     // §14.7 / §14.13 — o que a copeira monta no local
     const fin = finalizacaoNoLocal(c)
-    if (fin) linhas.push({ qtd: '', receita: fin.aviso, item: '', destaque: 'vermelho' })
+    if (fin) linhas.push({ qtd: '', receita: fin.aviso, item: '', destaque: 'amarelo' })
     // §14.10 — item que não pertence a este serviço
     if (itemForaDoServico(c, s.service_type))
       linhas.push({

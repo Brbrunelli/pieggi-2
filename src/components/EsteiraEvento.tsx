@@ -17,7 +17,7 @@ import { supabase } from '@/lib/supabase'
 import { usePermissoes } from '@/lib/permissoes'
 import { Button } from '@/components/ui'
 
-export type FaseEsteira = 'proposta' | 'contrato' | 'programacao' | 'producao' | 'compras'
+export type FaseEsteira = 'proposta' | 'contrato' | 'programacao' | 'producao' | 'compras' | 'campo'
 
 const ORDEM: { key: FaseEsteira; label: string; rota: (id: string) => string }[] = [
   { key: 'proposta', label: 'Proposta', rota: (id) => `/eventos/${id}/proposta` },
@@ -25,6 +25,8 @@ const ORDEM: { key: FaseEsteira; label: string; rota: (id: string) => string }[]
   { key: 'programacao', label: 'Programação', rota: (id) => `/eventos/${id}/programacao` },
   { key: 'producao', label: 'Produção', rota: (id) => `/eventos/${id}/producao` },
   { key: 'compras', label: 'Compras', rota: () => `/compras` },
+  // a rua: saída, montagem, desmontagem — feito = evento encerrado
+  { key: 'campo', label: 'Rua', rota: (id) => `/eventos/${id}/campo` },
 ]
 
 export default function EsteiraEvento({
@@ -39,12 +41,13 @@ export default function EsteiraEvento({
   const { data } = useQuery({
     queryKey: ['esteira', eventId],
     queryFn: async () => {
-      const [prop, contrato, sched, prod, compras] = await Promise.all([
+      const [prop, contrato, sched, prod, compras, campo] = await Promise.all([
         supabase.from('proposals').select('aprovado_em').eq('event_id', eventId).limit(5),
         supabase.from('contracts').select('status').eq('event_id', eventId).limit(1),
         supabase.from('schedules').select('aprovado_em').eq('event_id', eventId).limit(1),
         supabase.from('production_orders').select('aprovado_em').eq('event_id', eventId).limit(1),
         supabase.from('purchase_lists').select('event_ids').contains('event_ids', [eventId]),
+        supabase.from('events').select('campo_etapa').eq('id', eventId).maybeSingle(),
       ])
       const um = (r: { data: { aprovado_em: string | null }[] | null }) =>
         Boolean((r.data ?? []).some((x) => x.aprovado_em))
@@ -59,6 +62,7 @@ export default function EsteiraEvento({
         programacao: um(sched as never),
         producao: um(prod as never),
         compras: ((compras.data ?? []) as unknown[]).length > 0,
+        campo: (campo.data as { campo_etapa: string | null } | null)?.campo_etapa === 'encerrado',
       }
     },
   })
@@ -69,6 +73,7 @@ export default function EsteiraEvento({
     programacao: data?.programacao ?? false,
     producao: data?.producao ?? false,
     compras: data?.compras ?? false,
+    campo: data?.campo ?? false,
   }
 
   const visiveis = ORDEM.filter(

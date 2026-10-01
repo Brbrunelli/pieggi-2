@@ -13,6 +13,11 @@
 //                esteira nem no funil
 //   COZINHA    → 'producao' e 'compras': vê a operação, imprime e dá baixa
 //                do que ficou pronto — e não enxerga nada de dinheiro
+//   LOGÍSTICA  → a rua (Adriana + coordenadores): escala de freelancers,
+//                conferência de material, checklist com foto, sobras e
+//                encerramento do evento (0030). Não vê preço de venda
+//   MOTORISTA  → só as próprias viagens: endereço, horário, contato no
+//                local, saí/cheguei/concluí e ocorrência de endereço (0032)
 // ============================================================
 
 import { useAuth } from './auth'
@@ -24,6 +29,8 @@ export const PAPEL_LABEL: Record<UserRole, string> = {
   financeiro: 'Financeiro',
   producao: 'Cozinha — Produção',
   compras: 'Cozinha — Compras',
+  logistica: 'Logística — Rua',
+  motorista: 'Motorista',
 }
 
 export interface Permissoes {
@@ -47,6 +54,24 @@ export interface Permissoes {
   editarOperacao: boolean
   /** dar baixa no que já ficou pronto (estação da comanda, impressão) */
   marcarPronto: boolean
+  /** a rua (Adriana + coordenadores) */
+  ehLogistica: boolean
+  /** conferir material e marcar checklist da rua — pode_campo() na 0030 */
+  conferirCampo: boolean
+  /** escalar freelancer, cadastrar equipe e encerrar o evento — pode_escalar() */
+  escalar: boolean
+  /** só as próprias viagens (0032) — some todo o resto do menu */
+  ehMotorista: boolean
+  /** programar viagem: motorista, saída e chegada — pode_escalar() */
+  programarViagem: boolean
+  /** ver a equipe com PIX/documento/valor — pode_ver_equipe() */
+  verEquipe: boolean
+  /** módulo Compras: lista, pedidos de compra e fornecedores */
+  verCompras: boolean
+  /** receber mercadoria na porta (produção incluída — sem ver preço) */
+  receberCompra: boolean
+  /** fazer pedido de compra (gera conta a pagar no financeiro) */
+  pedirCompra: boolean
   /** cadastros e parâmetros em /admin */
   administrar: boolean
 }
@@ -57,6 +82,7 @@ export function permissoesDe(papel: UserRole | null | undefined): Permissoes {
   const ehComercial = p === 'comercial'
   const ehFinanceiro = p === 'financeiro'
   const ehCozinha = p === 'producao' || p === 'compras'
+  const ehLogistica = p === 'logistica'
   return {
     papel: p,
     ehAdmin,
@@ -71,6 +97,18 @@ export function permissoesDe(papel: UserRole | null | undefined): Permissoes {
     emitirNota: ehAdmin || ehFinanceiro,
     editarOperacao: ehAdmin,
     marcarPronto: ehAdmin || ehCozinha,
+    ehLogistica,
+    // a expedição (cozinha) confere a SAÍDA; a rua confere o resto
+    conferirCampo: ehAdmin || ehLogistica || ehCozinha,
+    escalar: ehAdmin || ehLogistica,
+    verEquipe: ehAdmin || ehLogistica || ehFinanceiro,
+    ehMotorista: p === 'motorista',
+    programarViagem: ehAdmin || ehLogistica,
+    // a logística consulta fornecedor para a rota de retirada
+    verCompras: ehAdmin || p === 'compras' || ehFinanceiro || ehLogistica,
+    pedirCompra: ehAdmin || p === 'compras',
+    // decisão de 01/10: a Bia (produção) recebe — a tela dela não mostra preço
+    receberCompra: ehAdmin || p === 'compras' || ehLogistica || p === 'producao',
     administrar: ehAdmin,
   }
 }

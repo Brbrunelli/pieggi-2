@@ -30,6 +30,7 @@ import {
   type PieggiEvent,
 } from '@/types'
 import { formatBRL, formatDiaMes } from '@/engine'
+import { hojeLocal, isoLocal } from '@/engine/datas'
 
 type EventoFaturavel = PieggiEvent & {
   clients: { id: string; nome: string; doc?: string | null } | null
@@ -140,7 +141,7 @@ export default function Notas() {
       // para produto o que precisar
       valor_produto: '0',
       valor_servico: String(totalEscolhido.toFixed(2)),
-      competencia: new Date().toISOString().slice(0, 10),
+      competencia: hojeLocal(),
       observacoes: '',
       parcelas: '1',
       primeiro_vencimento: '',
@@ -233,7 +234,7 @@ export default function Notas() {
             parcela: i + 1,
             parcelas: nParcelas,
             valor,
-            vencimento: venc.toISOString().slice(0, 10),
+            vencimento: isoLocal(venc),
             created_by: session?.user.id,
           }
         })

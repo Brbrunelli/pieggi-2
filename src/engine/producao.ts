@@ -29,7 +29,7 @@ export interface BlocoProgramacao {
     qtd: string
     receita: string
     item: string
-    destaque?: 'amarelo' | 'vermelho' | null
+    destaque?: 'amarelo' | 'vermelho' | 'azul' | null
   }[]
 }
 

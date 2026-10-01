@@ -1,6 +1,13 @@
 // Tipos do domínio — espelham o schema do Supabase
 
-export type UserRole = 'admin' | 'comercial' | 'producao' | 'compras' | 'financeiro'
+export type UserRole =
+  | 'admin'
+  | 'comercial'
+  | 'producao'
+  | 'compras'
+  | 'financeiro'
+  | 'logistica'
+  | 'motorista'
 export type ClientKind = 'startse' | 'inteli' | 'wtc' | 'externo'
 export type PriceTableKind = 'startse_atual' | 'startse_negociacao' | 'externos' | 'wtc'
 
@@ -69,6 +76,8 @@ export interface Client {
   tipo: ClientKind
   endereco: string | null
   endereco_fixo: boolean
+  /** acesso de carga fixo (StartSe, WTC…) — pré-preenche o evento (0033) */
+  acesso_carga?: string | null
   marca_agua: string
   marca_refri: string
   marca_cerveja: string
@@ -163,7 +172,16 @@ export interface PieggiEvent {
   status: EventStatus
   pax: number | null
   endereco: string | null
+  /**
+   * Confirmado = endereço + andar/sala + acesso de carga + COM QUEM (0033).
+   * Editar qualquer um dos três derruba a confirmação no banco.
+   */
   endereco_confirmado: boolean
+  endereco_confirmado_com?: string | null
+  endereco_confirmado_por?: string | null
+  endereco_confirmado_em?: string | null
+  /** como a carga entra: doca, portaria de serviço, elevador de carga, horário */
+  acesso_carga?: string | null
   local_detalhe: string | null
   restricoes: Restricao[]
   /** AUTOMÁTICO — total da proposta salva (base da verba 8%) */
@@ -181,6 +199,9 @@ export interface PieggiEvent {
   motivo_perda: string | null
   /** Link do negócio no Pipedrive (o funil comercial mora lá) */
   pipedrive_url: string | null
+  /** Fase de campo (migration 0030) — null = ainda não saiu da casa */
+  campo_etapa: CampoEtapa | null
+  campo_em: string | null
   obs: string | null
   created_at: string
   updated_at: string
@@ -636,4 +657,337 @@ export function faseAtual(status: EventStatus): number {
     default:
       return FASES.length
   }
+}
+
+// ------------------------------------------------------------
+// RUA — fase de campo (migration 0030)
+// ------------------------------------------------------------
+
+/**
+ * Depois da Produção o evento vai para a rua. Cada avanço exige a
+ * evidência da etapa, e quem confere é o banco (`campo_pendencias`).
+ */
+export type CampoEtapa = 'expedido' | 'montado' | 'desmontado' | 'encerrado'
+
+export const CAMPO_ETAPAS: { key: CampoEtapa; label: string; acao: string; exige: string }[] = [
+  {
+    key: 'expedido',
+    label: 'Expedido',
+    acao: 'Marcar como expedido',
+    exige: 'material conferido na saída + checklist de saída',
+  },
+  {
+    key: 'montado',
+    label: 'Montado',
+    acao: 'Marcar como montado',
+    exige: 'checklist de montagem com fotos (mesa, plaquinhas, touca)',
+  },
+  {
+    key: 'desmontado',
+    label: 'Desmontado',
+    acao: 'Marcar como desmontado',
+    exige: 'reposição e desmontagem + material conferido no retorno + termo de sobras',
+  },
+  {
+    key: 'encerrado',
+    label: 'Encerrado',
+    acao: 'Encerrar o evento',
+    exige: 'presença de toda a equipe registrada',
+  },
+]
+
+export function proximaEtapaCampo(atual: CampoEtapa | null): CampoEtapa | null {
+  if (!atual) return 'expedido'
+  const i = CAMPO_ETAPAS.findIndex((e) => e.key === atual)
+  return CAMPO_ETAPAS[i + 1]?.key ?? null
+}
+
+/** Os 3 setores da expedição validados na call de 30/09. */
+export type SetorExpedicao = 'alimentacao' | 'bebidas' | 'estrutura'
+
+export const SETOR_LABEL: Record<SetorExpedicao, string> = {
+  alimentacao: 'Alimentação',
+  bebidas: 'Bebidas',
+  estrutura: 'Estrutura',
+}
+
+export interface Material {
+  id: string
+  nome: string
+  setor: SetorExpedicao
+  unidade: string
+  custo_reposicao: number | null
+  /** termos separados por "|" que casam com o item da linha de estrutura da comanda */
+  chave: string | null
+  ativo: boolean
+  ordem: number
+}
+
+export interface EventMaterial {
+  id: string
+  event_id: string
+  material_id: string | null
+  descricao: string
+  setor: SetorExpedicao
+  unidade: string
+  qtd_prevista: number | null
+  qtd_saida: number | null
+  saida_por: string | null
+  saida_em: string | null
+  qtd_retorno: number | null
+  qtd_quebra: number
+  retorno_por: string | null
+  retorno_em: string | null
+  obs: string | null
+  ordem: number
+  /** da view `event_materials_conferencia` — nunca coluna guardada */
+  custo_reposicao?: number | null
+  qtd_perda?: number | null
+  prejuizo?: number | null
+}
+
+export type ChecklistMomento = 'saida' | 'montagem' | 'reposicao' | 'desmontagem'
+
+export const MOMENTO_LABEL: Record<ChecklistMomento, string> = {
+  saida: 'Saída',
+  montagem: 'Montagem',
+  reposicao: 'Reposição',
+  desmontagem: 'Desmontagem',
+}
+
+export interface ChecklistTemplate {
+  id: string
+  momento: ChecklistMomento
+  texto: string
+  detalhe: string | null
+  /** null = todo evento */
+  service_types: ServiceType[] | null
+  exige_foto: boolean
+  obrigatorio: boolean
+  ordem: number
+  ativo: boolean
+}
+
+export interface EventCheck {
+  id: string
+  event_id: string
+  template_id: string
+  dia: string
+  foto_path: string | null
+  obs: string | null
+  feito_por: string | null
+  feito_em: string
+}
+
+export interface Freelancer {
+  id: string
+  nome: string
+  telefone: string | null
+  documento: string | null
+  pix: string | null
+  funcao_padrao: string | null
+  valor_padrao: number | null
+  ativo: boolean
+  obs: string | null
+}
+
+export type StaffStatus = 'escalado' | 'confirmado' | 'presente' | 'faltou' | 'cancelado'
+
+export const STAFF_STATUS_LABEL: Record<StaffStatus, string> = {
+  escalado: 'Escalado',
+  confirmado: 'Confirmado',
+  presente: 'Presente',
+  faltou: 'Faltou',
+  cancelado: 'Cancelado',
+}
+
+export interface EventStaff {
+  id: string
+  event_id: string
+  freelancer_id: string | null
+  nome: string
+  funcao: string | null
+  dia: string
+  horario_saida: string | null
+  horario_fim: string | null
+  valor: number | null
+  status: StaffStatus
+  avaliacao: number | null
+  obs: string | null
+}
+
+export interface SobraItem {
+  descricao: string
+  quantidade: number
+  unidade: string
+}
+
+export interface EventSobra {
+  id: string
+  event_id: string
+  dia: string
+  sem_sobra: boolean
+  itens: SobraItem[]
+  recebedor_nome: string | null
+  /** documento ou telefone de quem recebeu */
+  recebedor_contato: string | null
+  /** quem entregou pela Pieggi (0034) */
+  entregue_por?: string | null
+  /** o texto que o cliente aceitou, guardado na assinatura (0034) */
+  aceite_texto?: string | null
+  assinatura_path: string | null
+  foto_path: string | null
+  registrado_por: string | null
+  registrado_em: string
+}
+
+export type OcorrenciaTipo =
+  | 'quebra'
+  | 'atraso'
+  | 'reclamacao'
+  | 'falta'
+  | 'acidente'
+  | 'endereco'
+  | 'horario'
+  | 'outro'
+
+export const OCORRENCIA_LABEL: Record<OcorrenciaTipo, string> = {
+  quebra: 'Quebra',
+  atraso: 'Atraso',
+  reclamacao: 'Reclamação',
+  falta: 'Faltou item',
+  acidente: 'Acidente',
+  endereco: 'Endereço errado',
+  horario: 'Horário errado',
+  outro: 'Outro',
+}
+
+export interface EventOcorrencia {
+  id: string
+  event_id: string
+  tipo: OcorrenciaTipo
+  descricao: string
+  foto_path: string | null
+  staff_id: string | null
+  registrado_por: string | null
+  registrado_em: string
+  resolvida: boolean
+  resolucao: string | null
+}
+
+// ------------------------------------------------------------
+// TRANSPORTE — viagens do motorista (migration 0032)
+// ------------------------------------------------------------
+
+export type ViagemTipo = 'entrega' | 'recolhimento' | 'retirada'
+export type ViagemStatus = 'programada' | 'a_caminho' | 'no_local' | 'concluida' | 'cancelada'
+
+export const VIAGEM_TIPO_LABEL: Record<ViagemTipo, string> = {
+  entrega: 'Entrega',
+  recolhimento: 'Recolhimento',
+  retirada: 'Retirada no fornecedor',
+}
+
+export const VIAGEM_STATUS_LABEL: Record<ViagemStatus, string> = {
+  programada: 'Programada',
+  a_caminho: 'A caminho',
+  no_local: 'No local',
+  concluida: 'Concluída',
+  cancelada: 'Cancelada',
+}
+
+/**
+ * Linha da view `viagens_conferencia`: a viagem + o evento AGORA.
+ * `endereco`/`hora_servico` são o retrato de quando foi programada;
+ * `endereco_atual`/`hora_servico_atual`, o que o evento diz hoje.
+ */
+export interface Viagem {
+  id: string
+  /** null na retirada em fornecedor */
+  event_id: string | null
+  dia: string
+  tipo: ViagemTipo
+  motorista_id: string | null
+  veiculo: string | null
+  saida_prevista: string
+  chegada_prevista: string | null
+  endereco: string | null
+  local_detalhe: string | null
+  hora_servico: string | null
+  contato_nome: string | null
+  contato_telefone: string | null
+  obs: string | null
+  status: ViagemStatus
+  saiu_em: string | null
+  chegou_em: string | null
+  concluida_em: string | null
+  chegada_lat: number | null
+  chegada_lng: number | null
+  // ---- da view ----
+  evento_nome: string
+  cliente: string | null
+  pax: number | null
+  endereco_atual: string | null
+  local_atual: string | null
+  endereco_confirmado: boolean
+  hora_servico_atual: string | null
+  motorista_nome: string | null
+  /** retirada (0033) */
+  fornecedor_id: string | null
+  fornecedor_nome: string | null
+  fornecedor_horario: string | null
+  itens: ItemRetirada[]
+  /** como entrar: acesso de carga do evento ou observação do fornecedor */
+  acesso_atual: string | null
+  endereco_mudou: boolean
+  horario_mudou: boolean
+  chegada_apertada: boolean | null
+  saida_depois_do_servico: boolean | null
+}
+
+/** Os avisos que não deixam a viagem sair errada — mesma lista nas duas telas. */
+export function alertasViagem(v: Viagem): string[] {
+  const out: string[] = []
+  if (!v.endereco_confirmado)
+    out.push(
+      v.tipo === 'retirada'
+        ? 'Fornecedor sem endereço cadastrado.'
+        : 'Endereço do evento NÃO confirmado (andar, acesso de carga e com quem).'
+    )
+  if (v.tipo !== 'retirada' && v.endereco_confirmado && !v.acesso_atual?.trim())
+    out.push('Sem instrução de acesso de carga (doca/portaria).')
+  if (v.endereco_mudou) out.push('O endereço mudou depois que a viagem foi programada.')
+  if (v.horario_mudou) out.push('O horário do serviço mudou depois que a viagem foi programada.')
+  if (v.saida_depois_do_servico) out.push('A saída está marcada para depois do início do serviço.')
+  if (v.chegada_apertada) out.push('Chegada em cima da hora — não sobra tempo de montagem.')
+  if (!v.motorista_id) out.push('Viagem sem motorista.')
+  return out
+}
+
+/** "05:30:00" → "05h30" */
+export function horaBR(t: string | null | undefined): string {
+  if (!t) return '—'
+  const [h, m] = t.split(':')
+  return `${h}h${m}`
+}
+
+export interface ItemRetirada {
+  descricao: string
+  qtd: string
+  /** para qual evento é (a mesma retirada pode servir a vários) */
+  evento?: string
+}
+
+export interface Fornecedor {
+  id: string
+  /** casa com catalog_items.fornecedor ('leticia', 'leal'…) */
+  chave: string | null
+  nome: string
+  endereco: string | null
+  complemento: string | null
+  contato: string | null
+  telefone: string | null
+  horario: string | null
+  obs: string | null
+  ativo: boolean
 }

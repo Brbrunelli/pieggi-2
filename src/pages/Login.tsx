@@ -3,6 +3,13 @@ import { Navigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
 import { Button, Input } from '@/components/ui'
+import { entrarNaDemo, MODO_DEMO } from '@/demo/modo'
+import { entrarComoPerfil } from '@/demo/cliente'
+
+/** já na demo (depois de "sair"): volta como admin; troca de papel é na faixa do topo */
+function demoEntrar() {
+  entrarComoPerfil('u-admin')
+}
 
 /**
  * Split Canvas — o layout assinatura da marca: metade ink, metade bone.
@@ -153,6 +160,16 @@ export default function Login() {
 
           <p className="mt-8 text-[11px] leading-relaxed text-neutral-500">
             O acesso é criado pelo administrador. Se você ainda não tem login, fale com o Bruno.
+          </p>
+          <p className="mt-4">
+            {/* ver as telas com cenários de teste, sem tocar no banco */}
+            <button
+              type="button"
+              onClick={() => (MODO_DEMO ? demoEntrar() : entrarNaDemo())}
+              className="text-[11px] font-semibold tracking-[0.12em] text-amber-700 underline"
+            >
+              🧪 ENTRAR NO MODO DEMONSTRAÇÃO
+            </button>
           </p>
         </form>
       </div>

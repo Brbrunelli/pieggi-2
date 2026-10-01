@@ -19,6 +19,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import { garantirClienteNoCRM } from '@/lib/crm'
 import { useAuth } from '@/lib/auth'
 import { Badge, Button, Card, Input, PageTitle, Select, Textarea } from '@/components/ui'
 import {
@@ -35,6 +36,7 @@ import {
   type ServiceType,
 } from '@/types'
 import { calcReposicao, duracaoMin, formatBRL } from '@/engine'
+import { hojeLocal } from '@/engine/datas'
 
 interface ItemProposto {
   catalog_item_id: string
@@ -66,6 +68,8 @@ interface Proposta {
   pax: number
   endereco: string
   local_detalhe: string
+  /** como a carga entra — opcional: proposta gerada antes da 0033 não traz */
+  acesso_carga?: string
   preco_a_definir: boolean
   tabela_sugerida: string
   incluir_institucional: boolean
@@ -263,7 +267,7 @@ export default function Briefing() {
         body: {
           acao: 'conversar',
           mensagens: historico,
-          hoje: new Date().toISOString().slice(0, 10),
+          hoje: hojeLocal(),
         },
       })
       if (error) throw error
@@ -293,7 +297,7 @@ export default function Briefing() {
         body: {
           acao: 'finalizar',
           mensagens,
-          hoje: new Date().toISOString().slice(0, 10),
+          hoje: hojeLocal(),
         },
       })
       if (error) throw error
@@ -317,18 +321,34 @@ export default function Briefing() {
         (c) => c.nome.toLowerCase() === proposta.cliente_cadastrado.toLowerCase()
       )
       const tabela = tabelas?.find((t) => t.kind === proposta.tabela_sugerida)
+      // cliente novo da conversa entra no CRM sozinho (0037); se falhar,
+      // fica o nome digitado e o aviso do CRM cobra o cadastro depois
+      const clienteId =
+        cliente?.id ??
+        (proposta.cliente_nome?.trim()
+          ? await garantirClienteNoCRM({
+              nome: proposta.cliente_nome,
+              contato: proposta.contato || null,
+              origem: 'briefing',
+            }).catch(() => null)
+          : null)
 
       const { data: evento, error } = await supabase
         .from('events')
         .insert({
           nome: proposta.evento || 'Evento sem nome',
           contato: proposta.contato || null,
-          client_id: cliente?.id ?? null,
-          cliente_nome: cliente ? null : proposta.cliente_nome || null,
+          client_id: clienteId,
+          cliente_nome: clienteId ? null : proposta.cliente_nome || null,
           price_table_id: tabela?.id ?? null,
           pax: proposta.pax || null,
           endereco: proposta.endereco || cliente?.endereco || null,
-          endereco_confirmado: Boolean(cliente?.endereco_fixo),
+          // confirmar é ato de alguém, com andar, acesso e com quem (0033) —
+          // o briefing só pré-preenche o acesso fixo do cliente
+          endereco_confirmado: false,
+          acesso_carga:
+            proposta.acesso_carga?.trim() ||
+            (cliente?.endereco_fixo ? (cliente.acesso_carga ?? null) : null),
           local_detalhe: proposta.local_detalhe || null,
           preco_a_definir: proposta.preco_a_definir,
           orcamento_valor: proposta.orcamento_total > 0 ? proposta.orcamento_total : null,
@@ -665,6 +685,14 @@ export default function Briefing() {
                       label="Endereço"
                       value={proposta.endereco || clienteEncontrado?.endereco || ''}
                       onChange={(e) => setProposta({ ...proposta, endereco: e.target.value })}
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <Input
+                      label="Como a carga entra (doca / portaria / elevador / contato no local)"
+                      placeholder="Se o cliente não souber agora, fica para o pós-venda"
+                      value={proposta.acesso_carga || clienteEncontrado?.acesso_carga || ''}
+                      onChange={(e) => setProposta({ ...proposta, acesso_carga: e.target.value })}
                     />
                   </div>
                   <label className="flex items-center gap-2 text-sm">

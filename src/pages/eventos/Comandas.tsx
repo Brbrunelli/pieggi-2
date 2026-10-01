@@ -130,7 +130,7 @@ export default function Comandas() {
   interface BlocoProg {
     serviceId: string
     titulo: string
-    linhas: { qtd: string; receita: string; item: string; destaque?: 'amarelo' | 'vermelho' | null }[]
+    linhas: { qtd: string; receita: string; item: string; destaque?: 'amarelo' | 'vermelho' | 'azul' | null }[]
   }
 
   const { data: pedidos } = usePedidos(id)
@@ -722,7 +722,7 @@ function EditorLinhas({
             <tr
               key={i}
               className={
-                l.destaque === 'amarelo' ? 'bg-yellow-50' : l.destaque === 'vermelho' ? 'bg-red-50' : ''
+                l.destaque === 'amarelo' ? 'bg-yellow-50' : l.destaque === 'vermelho' ? 'bg-red-50' : l.destaque === 'azul' ? 'bg-blue-50' : ''
               }
             >
               <td className="px-1 py-0.5">

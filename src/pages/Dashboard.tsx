@@ -27,6 +27,8 @@ import {
 } from '@/types'
 import { calcPreco, formatBRL, formatDiaMes } from '@/engine'
 import { usePermissoes } from '@/lib/permissoes'
+import PainelRua from '@/components/campo/PainelRua'
+import { hojeLocal, isoLocal } from '@/engine/datas'
 
 interface ServicoLeve {
   id: string
@@ -296,7 +298,7 @@ function limitesDoMes(iso: string): [string, string] {
 function somaDias(iso: string, n: number): string {
   const d = new Date(iso + 'T12:00')
   d.setDate(d.getDate() + n)
-  return d.toISOString().slice(0, 10)
+  return isoLocal(d)
 }
 
 function diasEntre(de: string, ate: string): number {
@@ -309,7 +311,7 @@ export default function Dashboard() {
   const { verValores } = usePermissoes()
   const [base, setBase] = useState<Base>('fechamento')
   const [periodo, setPeriodo] = useState<{ de: string; ate: string }>(() => {
-    const [de, ate] = limitesDoMes(new Date().toISOString().slice(0, 10))
+    const [de, ate] = limitesDoMes(hojeLocal())
     return { de, ate }
   })
 
@@ -342,7 +344,7 @@ export default function Dashboard() {
       ])
       if (evRes.error) throw evRes.error
 
-      const hoje = new Date().toISOString().slice(0, 10)
+      const hoje = hojeLocal()
       const servicos = (servRes.data ?? []) as ServicoLeve[]
 
       // primeira aprovação de cada evento (reaprovar depois não muda a venda)
@@ -438,7 +440,7 @@ export default function Dashboard() {
   const precos = data?.precos ?? []
   const itens = data?.itens ?? []
   const erp = data?.erp ?? []
-  const hoje = data?.hoje ?? new Date().toISOString().slice(0, 10)
+  const hoje = data?.hoje ?? hojeLocal()
 
   const ativos = eventos.filter((e) => e.status !== 'concluido')
   const travados = ativos.filter((e) => e.alertas.some((a) => a.nivel === 'vermelho'))
@@ -795,6 +797,8 @@ export default function Dashboard() {
         <b>{compacto(outra.valor)}</b> em {outra.qtd} evento(s) ·{' '}
         <span className="underline">ver esta leitura</span>
       </button>
+
+      <PainelRua de={periodo.de} ate={periodo.ate} />
       </>
       )}
 

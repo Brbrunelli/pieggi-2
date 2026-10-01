@@ -19,6 +19,7 @@ import { useAuth } from '@/lib/auth'
 import { Badge, Button, Card, EmptyState, Input, PageTitle, Td, Th } from '@/components/ui'
 import type { Receivable } from '@/types'
 import { formatBRL } from '@/engine'
+import { hojeLocal } from '@/engine/datas'
 
 type Filtro = 'abertos' | 'atrasados' | 'recebidos' | 'todos'
 
@@ -120,7 +121,7 @@ export default function Receber() {
     setBaixando(t)
     setBaixa({
       valor_pago: String(t.valor),
-      pago_em: new Date().toISOString().slice(0, 10),
+      pago_em: hojeLocal(),
       forma_pagamento: t.forma_pagamento ?? '',
     })
   }
@@ -134,7 +135,7 @@ export default function Receber() {
       .update({
         status: 'recebido',
         valor_pago: baixa.valor_pago ? Number(baixa.valor_pago) : baixando.valor,
-        pago_em: baixa.pago_em || new Date().toISOString().slice(0, 10),
+        pago_em: baixa.pago_em || hojeLocal(),
         forma_pagamento: baixa.forma_pagamento || null,
       })
       .eq('id', baixando.id)

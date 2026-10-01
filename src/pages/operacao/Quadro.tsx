@@ -26,6 +26,7 @@ import { usePermissoes } from '@/lib/permissoes'
 import { Button, Card, EmptyState, Input, PageTitle, Td, Th } from '@/components/ui'
 import { ETAPA_FECHADO, nomeCliente, type PieggiEvent } from '@/types'
 import { formatDiaMes } from '@/engine'
+import { hojeLocal } from '@/engine/datas'
 
 /** Prazo (dias antes do evento) para cada artefato estar pronto. */
 const PRAZO = { programacao: 4, producao: 2, compras: 2 }
@@ -126,7 +127,7 @@ export default function Quadro() {
         ])
       if (evRes.error) throw evRes.error
 
-      const hoje = new Date().toISOString().slice(0, 10)
+      const hoje = hojeLocal()
       const servicos = (servRes.data ?? []) as {
         event_id: string
         dia: string
